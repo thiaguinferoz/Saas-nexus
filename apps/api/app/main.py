@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.database import engine
 from app.models import Base
-from app.routers import auth, billing, internal, tenants, whatsapp
+from app.routers import auth, billing, catalog, internal, support, tenants, whatsapp
 
 settings = get_settings()
 
@@ -36,6 +36,8 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/v1")
 app.include_router(tenants.router, prefix="/v1")
 app.include_router(billing.router, prefix="/v1")
+app.include_router(catalog.router, prefix="/v1")
+app.include_router(support.router, prefix="/v1")
 app.include_router(whatsapp.router, prefix="/v1")
 app.include_router(internal.router)
 

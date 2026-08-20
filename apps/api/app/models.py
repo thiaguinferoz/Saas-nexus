@@ -1,8 +1,9 @@
 import enum
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -56,6 +57,24 @@ class OutboundMessageStatus(str, enum.Enum):
     READ = "read"
     FAILED = "failed"
     DEAD_LETTER = "dead_letter"
+
+
+class SupportTicketCategory(str, enum.Enum):
+    SUPPORT = "support"
+    BILLING = "billing"
+    INTEGRATION = "integration"
+    CUSTOM_PLAN = "custom_plan"
+
+
+class SupportTicketStatus(str, enum.Enum):
+    OPEN = "open"
+    IN_PROGRESS = "in_progress"
+    RESOLVED = "resolved"
+
+
+class SupportTicketPriority(str, enum.Enum):
+    NORMAL = "normal"
+    HIGH = "high"
 
 
 class User(Base):
@@ -207,5 +226,42 @@ class OutboundMessage(Base):
     provider_message_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class CatalogItem(Base):
+    __tablename__ = "catalog_items"
+    __table_args__ = (UniqueConstraint("tenant_id", "sku"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(200), index=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    category: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    sku: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    currency: Mapped[str] = mapped_column(String(3), default="BRL")
+    duration_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    source: Mapped[str] = mapped_column(String(32), default="manual")
+    attributes: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class SupportTicket(Base):
+    __tablename__ = "support_tickets"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
+    created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    category: Mapped[SupportTicketCategory] = mapped_column(Enum(SupportTicketCategory), index=True)
+    priority: Mapped[SupportTicketPriority] = mapped_column(Enum(SupportTicketPriority), default=SupportTicketPriority.NORMAL, index=True)
+    status: Mapped[SupportTicketStatus] = mapped_column(Enum(SupportTicketStatus), default=SupportTicketStatus.OPEN, index=True)
+    subject: Mapped[str] = mapped_column(String(200))
+    message: Mapped[str] = mapped_column(Text)
+    preferred_channel: Mapped[str] = mapped_column(String(32), default="platform")
+    contact_value: Mapped[str | None] = mapped_column(String(320), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

@@ -1,9 +1,10 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.models import OutboundMessageStatus, SubscriptionStatus, TenantStatus, WhatsAppConnectionStatus, WorkflowExecutionStatus
+from app.models import OutboundMessageStatus, SubscriptionStatus, SupportTicketCategory, SupportTicketPriority, SupportTicketStatus, TenantStatus, WhatsAppConnectionStatus, WorkflowExecutionStatus
 
 
 class RegisterRequest(BaseModel):
@@ -121,3 +122,66 @@ class OutboundMessageRead(BaseModel):
 class TypingIndicatorRequest(BaseModel):
     execution_id: uuid.UUID
     inbound_message_id: str = Field(min_length=5, max_length=255)
+
+
+class CatalogItemCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=200)
+    description: str | None = Field(default=None, max_length=4000)
+    category: str | None = Field(default=None, max_length=120)
+    sku: str | None = Field(default=None, max_length=120)
+    price: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    currency: str = Field(default="BRL", min_length=3, max_length=3)
+    duration_minutes: int | None = Field(default=None, ge=1, le=525600)
+    is_active: bool = True
+    attributes: dict = Field(default_factory=dict)
+
+
+class CatalogItemUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=200)
+    description: str | None = Field(default=None, max_length=4000)
+    category: str | None = Field(default=None, max_length=120)
+    sku: str | None = Field(default=None, max_length=120)
+    price: Decimal | None = Field(default=None, ge=0, decimal_places=2)
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+    duration_minutes: int | None = Field(default=None, ge=1, le=525600)
+    is_active: bool | None = None
+    attributes: dict | None = None
+
+
+class CatalogItemRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    name: str
+    description: str | None
+    category: str | None
+    sku: str | None
+    price: Decimal | None
+    currency: str
+    duration_minutes: int | None
+    is_active: bool
+    source: str
+    attributes: dict
+    created_at: datetime
+    updated_at: datetime
+
+
+class SupportTicketCreate(BaseModel):
+    category: SupportTicketCategory = SupportTicketCategory.SUPPORT
+    subject: str = Field(min_length=4, max_length=200)
+    message: str = Field(min_length=10, max_length=8000)
+    preferred_channel: str = Field(default="platform", pattern=r"^(platform|email|whatsapp|phone)$")
+    contact_value: str | None = Field(default=None, max_length=320)
+
+
+class SupportTicketRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    category: SupportTicketCategory
+    priority: SupportTicketPriority
+    status: SupportTicketStatus
+    subject: str
+    message: str
+    preferred_channel: str
+    contact_value: str | None
+    created_at: datetime
+    updated_at: datetime
