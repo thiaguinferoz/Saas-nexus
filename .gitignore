@@ -1,0 +1,20 @@
+.env
+.env.*
+!.env.example
+!.env.n8n.example
+
+# Workflow legado de cliente: mantido somente no ambiente local
+/IA VET CAIÇARA - BASE SEM CATALOGO.json
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+node_modules/
+.next/
+.next-*/
+dist/
+coverage/
+*.log
+.DS_Store

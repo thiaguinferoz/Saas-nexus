@@ -1,0 +1,26 @@
+[project]
+name = "saas-whatsapp-api"
+version = "0.1.0"
+description = "Control plane multi-tenant para automações de WhatsApp"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.116,<1",
+  "uvicorn[standard]>=0.35,<1",
+  "sqlalchemy[asyncio]>=2.0,<3",
+  "asyncpg>=0.30,<1",
+  "pydantic-settings>=2.10,<3",
+  "pyjwt[crypto]>=2.10,<3",
+  "pwdlib[argon2]>=0.2,<1",
+  "email-validator>=2.2,<3",
+  "redis>=6,<7",
+  "stripe>=12,<13",
+  "httpx>=0.28,<1",
+  "alembic>=1.16,<2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
