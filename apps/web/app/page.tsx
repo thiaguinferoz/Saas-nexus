@@ -17,12 +17,14 @@ const features = [
 ];
 
 export default function Home() {
+  const appUrl = "https://app.usenexusia.com";
+
   return (
     <main className="nexus-site">
       <nav className="nav shell">
         <NexusLogo />
         <div className="nav-links"><a href="#solucao">Solução</a><a href="#demonstracao">A IA em ação</a><a href="#como-funciona">Como funciona</a></div>
-        <div className="nav-actions"><Link className="text-button" href="/login">Acessar painel</Link><Link className="button small" href="/cadastro">Começar agora <ArrowRight /></Link></div>
+        <div className="nav-actions"><Link className="text-button" href={`${appUrl}/login`}>Entrar</Link><Link className="button small" href={`${appUrl}/cadastro`}>Criar conta <ArrowRight /></Link></div>
       </nav>
 
       <section className="hero nexus-hero shell">
@@ -30,7 +32,7 @@ export default function Home() {
           <span className="eyebrow"><Sparkle weight="fill" /> Inteligência que conecta</span>
           <h1>Converse melhor.<br/><em>Automatize além.</em></h1>
           <p>A Nexus transforma seu WhatsApp em uma operação inteligente: entende cada mensagem, responde com contexto e conecta clientes, equipe e processos.</p>
-          <div className="hero-actions"><Link className="button" href="/cadastro">Criar minha operação <ArrowRight weight="bold" /></Link><a className="secondary-button" href="#demonstracao"><Play weight="fill" /> Ver a IA funcionando</a></div>
+          <div className="hero-actions"><Link className="button" href={`${appUrl}/cadastro`}>Criar minha conta <ArrowRight weight="bold" /></Link><a className="secondary-button" href="#demonstracao"><Play weight="fill" /> Ver a IA funcionando</a></div>
           <div className="hero-proof"><span><Check weight="bold" /> API oficial</span><span><Check weight="bold" /> Configuração rápida</span><span><Check weight="bold" /> Suporte humano</span></div>
         </div>
         <div className="nexus-visual" aria-label="Ecossistema de automação Nexus">
@@ -53,10 +55,10 @@ export default function Home() {
       <AiDemo />
 
       <section id="como-funciona" className="nexus-steps">
-        <div className="shell steps-layout"><div><span className="eyebrow light">Da ideia à operação</span><h2>Comece rápido.<br/>Escale no seu ritmo.</h2><p>Nós cuidamos da tecnologia para sua empresa cuidar melhor das pessoas.</p><Link className="button white" href="/cadastro">Quero conhecer a Nexus <ArrowRight /></Link></div><ol><li><b>01</b><span><strong>Conte como sua empresa atende</strong>Defina horários, tom de voz e regras importantes.</span></li><li><b>02</b><span><strong>Conecte seu WhatsApp</strong>Ative seu número pela infraestrutura oficial.</span></li><li><b>03</b><span><strong>Acompanhe a inteligência em ação</strong>A Nexus começa a atender e seu painel mostra a operação.</span></li></ol></div>
+        <div className="shell steps-layout"><div><span className="eyebrow light">Da ideia à operação</span><h2>Comece rápido.<br/>Escale no seu ritmo.</h2><p>Nós cuidamos da tecnologia para sua empresa cuidar melhor das pessoas.</p><Link className="button white" href={`${appUrl}/cadastro`}>Quero conhecer a Nexus <ArrowRight /></Link></div><ol><li><b>01</b><span><strong>Conte como sua empresa atende</strong>Defina horários, tom de voz e regras importantes.</span></li><li><b>02</b><span><strong>Conecte seu WhatsApp</strong>Ative seu número pela infraestrutura oficial.</span></li><li><b>03</b><span><strong>Acompanhe a inteligência em ação</strong>A Nexus começa a atender e seu painel mostra a operação.</span></li></ol></div>
       </section>
 
-      <section className="nexus-cta shell"><div className="cta-glow"/><ShieldCheck weight="duotone"/><span className="eyebrow">Sua próxima evolução começa aqui</span><h2>Conecte sua empresa ao futuro das conversas.</h2><p>Atendimento inteligente, automações reais e uma experiência que leva a sua marca junto.</p><Link className="button" href="/cadastro">Começar com a Nexus <ArrowRight /></Link></section>
+      <section className="nexus-cta shell"><div className="cta-glow"/><ShieldCheck weight="duotone"/><span className="eyebrow">Sua próxima evolução começa aqui</span><h2>Conecte sua empresa ao futuro das conversas.</h2><p>Atendimento inteligente, automações reais e uma experiência que leva a sua marca junto.</p><Link className="button" href={`${appUrl}/cadastro`}>Criar minha conta <ArrowRight /></Link></section>
 
       <footer><div className="shell"><NexusLogo/><p>Automações inteligentes que conectam negócios e pessoas.</p><span>© 2026 Nexus. Todos os direitos reservados.</span></div></footer>
     </main>
