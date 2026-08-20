@@ -12,6 +12,7 @@ __pycache__/
 .ruff_cache/
 .venv/
 node_modules/
+.pnpm-store/
 .next/
 .next-*/
 dist/

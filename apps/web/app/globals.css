@@ -47,3 +47,339 @@
 @media(max-width:1180px){.overview-reference{grid-template-columns:1fr}.overview-side{grid-template-columns:1.1fr .9fr}.setup-compact-list{grid-template-columns:1fr 1fr}.setup-compact-list button:nth-last-child(2){border-bottom:0}}
 @media(max-width:900px){.reference-dashboard .dash-main{padding:0 16px 28px}.reference-dashboard .sidebar{background:#11183f}.reference-dashboard .sidebar .nexus-brand{color:white}.dashboard-topbar{height:54px}.reference-dashboard .dash-head{min-height:130px}.overview-side{grid-template-columns:1fr}.setup-compact-list{grid-template-columns:1fr}.setup-compact-list button:nth-last-child(2){border-bottom:1px solid #eef0f5}}
 @media(max-width:620px){.metric-grid,.quick-actions{grid-template-columns:1fr}.metric-grid article{min-height:105px}.reference-dashboard .dash-head h1{font-size:18px}.reference-dashboard .dash-actions{margin-top:12px}.overview-reference{margin-top:10px}}
+
+/* Client portal v2 — readable, calm and aligned with the Nexus brand */
+.client-portal{
+  --portal-ink:#18213f;
+  --portal-muted:#6e7892;
+  --portal-line:#e3e7f1;
+  --portal-purple:#6441d8;
+  --portal-cyan:#18adc3;
+  --portal-green:#16a879;
+  grid-template-columns:280px minmax(0,1fr);
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 92% 0,rgba(101,65,216,.08),transparent 28rem),
+    #f6f7fb;
+  color:var(--portal-ink);
+}
+.client-portal .sidebar{
+  position:sticky;
+  top:0;
+  height:100vh;
+  padding:28px 20px 20px;
+  overflow-y:auto;
+  color:white;
+  background:
+    radial-gradient(circle at 0 28%,rgba(100,65,216,.34),transparent 18rem),
+    linear-gradient(180deg,#0c1332 0%,#11183e 58%,#101535 100%);
+  border-right:1px solid rgba(255,255,255,.07);
+  box-shadow:14px 0 45px rgba(15,21,54,.12);
+}
+.client-portal .sidebar:before{display:none}
+.client-portal .sidebar .nexus-brand{padding:2px 6px;color:white}
+.client-portal .sidebar .nexus-brand>span:last-child{color:white;font-size:16px;letter-spacing:2px}
+.client-portal .sidebar .nexus-brand small{color:#8e9abd;font-size:7px;letter-spacing:1px}
+.client-portal .sidebar .nexus-symbol{width:42px;height:42px;box-shadow:0 9px 25px rgba(123,83,238,.28)}
+.workspace-card{
+  display:flex;
+  align-items:center;
+  gap:11px;
+  margin:28px 2px 24px;
+  padding:13px;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:15px;
+  background:rgba(255,255,255,.06);
+  box-shadow:inset 0 1px rgba(255,255,255,.04);
+}
+.workspace-card>span{
+  width:36px;
+  height:36px;
+  flex:0 0 36px;
+  display:grid;
+  place-items:center;
+  border-radius:11px;
+  color:white;
+  font-size:14px;
+  font-weight:800;
+  background:linear-gradient(145deg,#7651e5,#16aeca);
+}
+.workspace-card>div{display:grid;gap:3px;min-width:0;flex:1}
+.workspace-card small{color:#8f9abc;font-size:9px}
+.workspace-card strong{overflow:hidden;color:#f8f9ff;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+.workspace-card>i{width:7px;height:7px;border-radius:50%;background:#31d5a2;box-shadow:0 0 0 4px rgba(49,213,162,.1)}
+.client-portal .sidebar-label{display:block;margin:0 12px 10px;color:#68749b;font-size:9px;font-weight:800;letter-spacing:1.6px}
+.client-portal .sidebar nav{position:relative;display:grid;gap:6px;margin:0}
+.client-portal .sidebar nav:before{display:none}
+.client-portal .sidebar nav button{
+  position:relative;
+  min-height:46px;
+  padding:0 13px;
+  gap:12px;
+  border:1px solid transparent;
+  border-radius:12px;
+  color:#aeb8d5;
+  font-size:13px;
+  font-weight:650;
+  transition:background .18s,border-color .18s,color .18s,transform .18s;
+}
+.client-portal .sidebar nav button:hover{color:white;background:rgba(255,255,255,.065);transform:translateX(2px)}
+.client-portal .sidebar nav button.active{
+  color:white;
+  background:linear-gradient(100deg,rgba(116,76,221,.52),rgba(31,182,205,.2));
+  border-color:rgba(174,148,255,.18);
+  box-shadow:0 10px 24px rgba(4,8,30,.15);
+}
+.client-portal .sidebar nav button svg{width:19px;height:19px;color:#8490b5}
+.client-portal .sidebar nav button.active svg{color:#bda8ff}
+.client-portal .sidebar nav button>span{flex:1;text-align:left}
+.client-portal .sidebar nav button>i{width:5px;height:5px;border-radius:50%;background:#68e2d0;box-shadow:0 0 0 4px rgba(104,226,208,.08)}
+.client-portal .sidebar-support{margin-top:auto;padding:14px;border-radius:14px;background:linear-gradient(135deg,rgba(117,78,222,.18),rgba(27,177,202,.1));border-color:rgba(174,148,255,.14)}
+.client-portal .sidebar-support>svg:first-child{width:20px;height:20px;color:#b99cff}
+.client-portal .sidebar-support span{font-size:10px;line-height:1.45}
+.client-portal .sidebar-support strong{font-size:11px;margin-bottom:2px}
+.client-portal .logout-button{min-height:42px;margin-top:9px!important;color:#8f9abb;font-size:12px}
+.client-portal .logout-button:hover{color:white;background:rgba(255,255,255,.06)}
+.client-portal .sidebar-footer{margin-top:8px;color:#626e94;font-size:9px;text-align:center}
+.client-portal .dash-main{width:100%;max-width:1510px;min-width:0;margin:0 auto;padding:0 38px 48px}
+.client-portal .dashboard-topbar{height:76px;color:#8790a8;font-size:12px}
+.portal-breadcrumb{display:flex;align-items:center;gap:7px}
+.portal-breadcrumb svg{width:13px;color:#b0b6c7}
+.portal-breadcrumb strong{color:#3d4663;font-size:12px}
+.client-portal .dashboard-topbar>div:last-child{gap:12px}
+.client-portal .dashboard-topbar button{width:40px;height:40px;border-radius:12px;border-color:#e2e5ef;box-shadow:0 6px 16px rgba(35,40,83,.05)}
+.client-portal .dashboard-topbar button svg{width:18px;height:18px}
+.client-portal .dashboard-topbar b{width:40px;height:40px;font-size:13px}
+.profile-copy{display:grid;text-align:right;line-height:1.25}
+.profile-copy strong{max-width:170px;overflow:hidden;color:#303954;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.profile-copy small{color:#9aa1b4;font-size:9px}
+.client-portal .dash-head{
+  min-height:176px;
+  padding:34px 36px;
+  gap:28px;
+  border:1px solid rgba(255,255,255,.8);
+  border-radius:26px;
+  color:white;
+  background:
+    radial-gradient(circle at 87% 20%,rgba(51,214,207,.22),transparent 17rem),
+    linear-gradient(120deg,#111943 0%,#39217c 56%,#116f91 125%);
+  box-shadow:0 22px 50px rgba(30,28,91,.16);
+}
+.client-portal .dash-head:before{width:410px;height:410px;right:-120px;top:-240px;opacity:.8}
+.client-portal .dash-head:after{right:28%;bottom:-150px;opacity:.25}
+.client-portal .dash-head small{color:#85dbe8;font-size:10px;font-weight:800;letter-spacing:1.8px}
+.client-portal .dash-head h1{max-width:760px;margin:9px 0 8px;color:white;font-size:32px;line-height:1.12;letter-spacing:-1.2px}
+.client-portal .dash-head p{max-width:660px;margin:0;color:#b6c1dc;font-size:13px;line-height:1.6}
+.client-portal .dash-actions{align-self:flex-end;flex-wrap:wrap;justify-content:flex-end}
+.client-portal .dash-actions .status-pill{display:flex;align-items:center;gap:8px;padding:10px 13px;color:#f2f4ff;font-size:11px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px)}
+.client-portal .dash-actions .status-pill i{width:7px;height:7px;border-radius:50%;background:#54e1b6;box-shadow:0 0 0 4px rgba(84,225,182,.1)}
+.client-portal .dash-actions .button{min-height:40px;padding:0 16px;font-size:11px;box-shadow:0 10px 24px rgba(0,0,0,.2)}
+.client-portal .demo-banner,.client-portal .panel-error{margin-top:16px;padding:12px 15px;border-radius:12px;font-size:12px;line-height:1.5}
+.client-portal .dashboard-loading{min-height:420px;font-size:14px}
+
+.client-portal .overview-reference{grid-template-columns:minmax(0,1fr) 360px;gap:20px;margin-top:20px}
+.client-portal .overview-main,.client-portal .overview-side{gap:20px}
+.client-portal .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.client-portal .metric-grid article{
+  min-height:156px;
+  padding:22px 23px;
+  border:1px solid var(--portal-line);
+  border-radius:20px;
+  background:white;
+  box-shadow:0 10px 28px rgba(42,46,93,.055);
+  transition:transform .18s,box-shadow .18s,border-color .18s;
+}
+.client-portal .metric-grid article:hover{transform:translateY(-2px);border-color:#d6d0f2;box-shadow:0 16px 34px rgba(42,46,93,.09)}
+.client-portal .metric-grid article.featured{background:linear-gradient(135deg,#eeeaff 0%,#e5f9fa 100%);border-color:#d9d7f2}
+.client-portal .metric-grid article>span{gap:9px;color:#59627d;font-size:12px}
+.client-portal .metric-grid article>span svg{width:20px;height:20px}
+.client-portal .metric-grid article>strong{margin:20px 0 5px;color:#1c2546;font-size:38px;line-height:1;letter-spacing:-1.8px}
+.client-portal .metric-grid article>small{color:#9299ae;font-size:10px}
+.client-portal .quick-actions-card,.client-portal .setup-compact,.client-portal .activity-card{
+  padding:23px;
+  border:1px solid var(--portal-line);
+  border-radius:20px;
+  background:white;
+  box-shadow:0 10px 28px rgba(42,46,93,.055);
+}
+.client-portal .overview-section-title{gap:12px}
+.client-portal .overview-section-title>span{width:40px;height:40px;border-radius:12px}
+.client-portal .overview-section-title>span svg{width:19px;height:19px}
+.client-portal .overview-section-title h2{color:#252d4b;font-size:15px}
+.client-portal .overview-section-title p{margin-top:4px;color:#969db1;font-size:10px}
+.client-portal .quick-actions{gap:12px;margin-top:20px}
+.client-portal .quick-actions button{min-height:94px;gap:12px;padding:15px;border-radius:15px}
+.client-portal .quick-actions button>svg:first-child{width:23px;height:23px;flex-basis:23px}
+.client-portal .quick-actions button>svg:last-child{width:14px;height:14px}
+.client-portal .quick-actions button strong{font-size:11px}
+.client-portal .quick-actions button small{margin-top:4px;font-size:8px;line-height:1.45}
+.client-portal .setup-compact{padding:24px}
+.client-portal .setup-compact-head span{font-size:8px;letter-spacing:1.5px}
+.client-portal .setup-compact-head h2{margin-top:6px;font-size:16px}
+.client-portal .setup-compact-head>strong{width:52px;height:52px;border-radius:15px;font-size:14px}
+.client-portal .setup-compact .progress{height:7px;margin:18px 0 7px}
+.client-portal .setup-compact-list button{gap:11px;padding:14px 2px}
+.client-portal .setup-compact-list button>i{width:34px;height:34px;border-radius:10px}
+.client-portal .setup-compact-list button>i svg{width:15px;height:15px}
+.client-portal .setup-compact-list button strong{font-size:11px}
+.client-portal .setup-compact-list button small{margin-top:4px;font-size:8px}
+.client-portal .setup-compact-list button>svg{width:13px;height:13px}
+.client-portal .activity-card li{gap:11px;padding:12px 0}
+.client-portal .activity-card li>i{width:34px;height:34px;border-radius:10px}
+.client-portal .activity-card li>i svg{width:15px;height:15px}
+.client-portal .activity-card li strong{font-size:11px}
+.client-portal .activity-card li small,.client-portal .activity-card time{font-size:8px}
+
+.client-portal .settings-panel{
+  margin-top:20px;
+  padding:32px;
+  border:1px solid var(--portal-line);
+  border-radius:22px;
+  background:white;
+  box-shadow:0 12px 34px rgba(42,46,93,.06);
+}
+.client-portal .panel-title{gap:15px;padding-bottom:25px}
+.client-portal .panel-title>span{width:50px;height:50px;border-radius:14px}
+.client-portal .panel-title svg{width:25px;height:25px}
+.client-portal .panel-title h2{margin-bottom:6px;color:#222b4b;font-size:19px}
+.client-portal .panel-title p{max-width:680px;color:#7d869e;font-size:12px;line-height:1.55}
+.client-portal .settings-grid{gap:22px;margin-top:27px}
+.client-portal .settings-panel label,.client-portal .settings-stack label{gap:9px;color:#39425e;font-size:12px}
+.client-portal .settings-panel input,.client-portal .settings-panel select,.client-portal .settings-panel textarea{
+  min-height:50px;
+  padding:13px 15px;
+  border-color:#dde2ed;
+  border-radius:12px;
+  color:#242c49;
+  background:#fafbfe;
+  font:13px var(--font-manrope);
+}
+.client-portal .settings-panel textarea{line-height:1.65}
+.client-portal .settings-stack{gap:22px;margin-top:27px;max-width:760px}
+.client-portal .settings-stack label>small{font-size:10px}
+.client-portal .hours-list{margin-top:22px}
+.client-portal .hours-row{min-height:70px;padding:10px 12px;border-radius:12px}
+.client-portal .hours-row.enabled:hover{background:#f9f9fe}
+.client-portal .day-toggle{width:200px;gap:13px!important}
+.client-portal .day-toggle strong{font-size:13px}
+.client-portal .day-toggle i{width:38px;height:21px}
+.client-portal .day-toggle i:after{width:17px;height:17px}
+.client-portal .day-toggle input:checked+i:after{left:19px}
+.client-portal .time-range{gap:11px}
+.client-portal .time-range input{min-height:42px;padding:8px 11px}
+.client-portal .time-range span,.client-portal .closed-label{font-size:11px}
+.client-portal .settings-panel:has(.assistant-preview){display:grid;grid-template-columns:minmax(0,1fr) 360px;column-gap:32px}
+.client-portal .settings-panel:has(.assistant-preview) .panel-title{grid-column:1/-1}
+.client-portal .settings-panel:has(.assistant-preview) .settings-stack{max-width:none;padding-right:0}
+.client-portal .assistant-preview{
+  position:static;
+  width:auto;
+  align-self:start;
+  margin-top:27px;
+  padding:22px;
+  border:1px solid #e0def3;
+  border-radius:18px;
+  background:linear-gradient(145deg,#f1eeff,#ebfafc);
+  box-shadow:0 16px 34px rgba(52,43,124,.1);
+}
+.client-portal .assistant-preview>span{color:#726f91;font-size:9px;letter-spacing:1.3px}
+.client-portal .preview-bubble{margin-top:14px;padding:12px 13px;border-radius:13px;font-size:11px;line-height:1.55}
+.client-portal .preview-bubble b{margin-bottom:5px;font-size:8px}
+.client-portal .preview-bubble b svg{width:11px;height:11px}
+.client-portal .assistant-preview>small{margin-top:13px;font-size:9px}
+
+.client-portal .whatsapp-view,.client-portal .billing-view{gap:20px;margin-top:20px}
+.client-portal .whatsapp-view{grid-template-columns:minmax(0,1.45fr) 360px}
+.client-portal .whatsapp-hero{min-height:510px;padding:44px;border-radius:24px;box-shadow:0 22px 50px rgba(22,28,67,.16)}
+.client-portal .whatsapp-hero-copy>span{font-size:10px;letter-spacing:1.7px}
+.client-portal .whatsapp-hero-copy>span svg{width:19px;height:19px}
+.client-portal .whatsapp-hero h2{max-width:650px;margin:66px 0 17px;font-size:40px;letter-spacing:-2px}
+.client-portal .whatsapp-hero-copy>p{max-width:650px;font-size:13px;line-height:1.75}
+.client-portal .connect-form{gap:12px;margin-top:32px}
+.client-portal .connect-form label{gap:9px;font-size:11px}
+.client-portal .connect-form input{height:52px;padding:0 16px;border-radius:13px;font-size:13px}
+.client-portal .whatsapp-button{height:52px!important;padding-inline:18px!important;font-size:12px!important}
+.client-portal .whatsapp-message{margin-top:13px;font-size:10px}
+.client-portal .connected-number{max-width:580px;margin-top:32px;padding:15px 17px;border-radius:16px}
+.client-portal .connected-number>i{width:44px;height:44px}
+.client-portal .connected-number small{font-size:9px}
+.client-portal .connected-number strong{font-size:13px}
+.client-portal .connected-number>b{font-size:9px}
+.client-portal .whatsapp-guide{padding:29px;border-radius:22px}
+.client-portal .whatsapp-guide>span{font-size:9px}
+.client-portal .whatsapp-guide ol{margin-top:27px}
+.client-portal .whatsapp-guide li{gap:13px;padding-bottom:32px}
+.client-portal .whatsapp-guide li>i{width:33px;height:33px;flex-basis:33px;border-radius:10px;font-size:10px}
+.client-portal .whatsapp-guide li:not(:last-child):after{left:16px;top:34px;height:31px}
+.client-portal .whatsapp-guide li strong{font-size:12px}
+.client-portal .whatsapp-guide li small{margin-top:5px;font-size:9px;line-height:1.5}
+.client-portal .whatsapp-safe{padding:16px;border-radius:15px}
+.client-portal .whatsapp-safe span{font-size:9px}
+.client-portal .whatsapp-safe strong{font-size:11px}
+
+.client-portal .billing-view{grid-template-columns:minmax(0,1.45fr) 360px}
+.client-portal .billing-plan-card{min-height:520px;padding:42px;border-radius:24px}
+.client-portal .billing-plan-head>span{font-size:10px}
+.client-portal .billing-plan-head>strong{font-size:10px}
+.client-portal .billing-plan-card h2{margin-top:52px;font-size:39px;letter-spacing:-2px}
+.client-portal .billing-plan-card>p{max-width:670px;font-size:13px;line-height:1.75}
+.client-portal .plan-features{gap:14px 18px;margin:27px 0}
+.client-portal .plan-features span{font-size:11px}
+.client-portal .billing-plan-card .button{min-height:48px;padding-inline:19px;font-size:12px}
+.client-portal .billing-status-card{padding:27px;border-radius:22px}
+.client-portal .billing-status-card>span{font-size:9px}
+.client-portal .billing-status-card li{gap:12px;padding-bottom:27px}
+.client-portal .billing-status-card li>i{width:32px;height:32px;font-size:10px}
+.client-portal .billing-status-card li strong{font-size:12px}
+.client-portal .billing-status-card li small{font-size:9px}
+.client-portal .billing-security{padding:20px;border-radius:18px}
+.client-portal .billing-security span{font-size:9px}
+.client-portal .billing-security strong{font-size:11px}
+
+@media(max-width:1220px){
+  .client-portal{grid-template-columns:245px minmax(0,1fr)}
+  .client-portal .dash-main{padding-inline:26px}
+  .client-portal .overview-reference{grid-template-columns:1fr}
+  .client-portal .overview-side{grid-template-columns:1.15fr .85fr}
+  .client-portal .whatsapp-view,.client-portal .billing-view{grid-template-columns:1fr}
+  .client-portal .whatsapp-guide,.client-portal .billing-side{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+}
+@media(max-width:980px){
+  .client-portal{display:block}
+  .client-portal .sidebar{position:sticky;z-index:30;top:0;width:100%;height:auto;min-height:0;padding:13px 16px 11px;overflow:visible;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:0;background:#10173b;box-shadow:0 8px 24px rgba(16,23,59,.16)}
+  .client-portal .sidebar .nexus-symbol{width:36px;height:36px}
+  .client-portal .sidebar .nexus-brand>span:last-child{font-size:14px}
+  .client-portal .workspace-card,.client-portal .sidebar-label,.client-portal .sidebar-support,.client-portal .logout-button,.client-portal .sidebar-footer{display:none}
+  .client-portal .sidebar nav{grid-column:1/-1;display:flex;margin-top:11px;gap:7px;overflow-x:auto;scrollbar-width:none}
+  .client-portal .sidebar nav::-webkit-scrollbar{display:none}
+  .client-portal .sidebar nav button{flex:0 0 auto;min-height:38px;padding:0 12px;font-size:11px;background:rgba(255,255,255,.035)}
+  .client-portal .sidebar nav button>i{display:none}
+  .client-portal .dash-main{padding:0 18px 34px}
+  .client-portal .dashboard-topbar{height:62px}
+  .client-portal .dash-head{min-height:170px;padding:28px}
+  .client-portal .settings-panel:has(.assistant-preview){display:block}
+  .client-portal .assistant-preview{margin-top:24px}
+}
+@media(max-width:680px){
+  .client-portal .profile-copy,.client-portal .portal-breadcrumb span,.client-portal .portal-breadcrumb svg{display:none}
+  .client-portal .dashboard-topbar{height:56px}
+  .client-portal .dash-head{align-items:flex-start;min-height:0;padding:25px 22px;gap:22px}
+  .client-portal .dash-head h1{font-size:26px}
+  .client-portal .dash-head p{font-size:12px}
+  .client-portal .dash-actions{align-self:stretch;justify-content:flex-start;width:100%}
+  .client-portal .metric-grid,.client-portal .quick-actions,.client-portal .overview-side,.client-portal .settings-grid{grid-template-columns:1fr}
+  .client-portal .metric-grid article{min-height:135px}
+  .client-portal .settings-panel{padding:23px 19px}
+  .client-portal .panel-title{align-items:flex-start}
+  .client-portal .panel-title>span{width:44px;height:44px;flex:0 0 44px}
+  .client-portal .hours-row{align-items:flex-start;gap:12px;flex-direction:column}
+  .client-portal .day-toggle{width:100%}
+  .client-portal .time-range{width:100%}
+  .client-portal .time-range input{flex:1;min-width:0}
+  .client-portal .whatsapp-guide,.client-portal .billing-side{display:grid;grid-template-columns:1fr}
+  .client-portal .whatsapp-hero,.client-portal .billing-plan-card{min-height:0;padding:28px 22px}
+  .client-portal .whatsapp-hero h2,.client-portal .billing-plan-card h2{margin-top:42px;font-size:30px;letter-spacing:-1.3px}
+  .client-portal .connect-form{align-items:stretch;flex-direction:column}
+  .client-portal .connect-form .button{width:100%}
+  .client-portal .plan-features{grid-template-columns:1fr}
+}
