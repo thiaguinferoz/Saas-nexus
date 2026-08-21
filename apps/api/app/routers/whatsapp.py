@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 
+from app.billing.access import sync_billing_access
 from app.config import get_settings
 from app.dependencies import CsrfGuard, CurrentTenant, DbSession
 from app.models import OutboundMessage, OutboundMessageStatus, OutboxEvent, Subscription, SubscriptionStatus, Tenant, TenantSettings, TenantStatus, WebhookEvent, WhatsAppConnection, WhatsAppConnectionStatus, WorkflowExecution
@@ -118,7 +119,10 @@ async def ycloud_webhook(request: Request, db: DbSession) -> dict[str, bool]:
     if connection and event["type"] in {"whatsapp.inbound_message.received", "whatsapp.smb.message.echoes"}:
         current_settings = await db.scalar(select(TenantSettings).where(TenantSettings.tenant_id == connection.tenant_id, TenantSettings.is_active.is_(True)).order_by(TenantSettings.version.desc()).limit(1))
         tenant = await db.get(Tenant, connection.tenant_id)
-        if current_settings and tenant and tenant.status in {TenantStatus.ACTIVE, TenantStatus.GRACE_PERIOD}:
+        billing_allowed = False
+        if tenant:
+            _, billing_allowed = await sync_billing_access(db, tenant)
+        if current_settings and tenant and billing_allowed and tenant.status in {TenantStatus.ACTIVE, TenantStatus.GRACE_PERIOD}:
             execution = WorkflowExecution(tenant_id=connection.tenant_id, webhook_event_id=record.id, provider_event_id=event["id"], config_version=current_settings.version, schema_version=settings.workflow_schema_version)
             db.add(execution)
             await db.flush()

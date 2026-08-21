@@ -6,6 +6,7 @@ from fastapi import APIRouter, Header, HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
+from app.billing.access import sync_billing_access
 from app.config import get_settings
 from app.dependencies import DbSession
 from app.models import (
@@ -60,7 +61,11 @@ async def read_execution_context(execution_id: uuid.UUID, db: DbSession, x_servi
     require_service_token(x_service_token)
     execution = await load_execution(execution_id, db)
     tenant = await db.get(Tenant, execution.tenant_id)
-    if not tenant or tenant.status not in {TenantStatus.ACTIVE, TenantStatus.GRACE_PERIOD}:
+    billing_allowed = False
+    if tenant:
+        _, billing_allowed = await sync_billing_access(db, tenant)
+    if not tenant or not billing_allowed or tenant.status not in {TenantStatus.ACTIVE, TenantStatus.GRACE_PERIOD}:
+        await db.commit()
         raise HTTPException(status_code=403, detail="Tenant sem permissão para executar automações")
     tenant_settings = await db.scalar(select(TenantSettings).where(TenantSettings.tenant_id == execution.tenant_id, TenantSettings.version == execution.config_version))
     event = await db.get(WebhookEvent, execution.webhook_event_id)
@@ -117,6 +122,13 @@ async def queue_text_message(payload: SendTextMessageRequest, db: DbSession, x_s
     if existing:
         return OutboundMessageRead(id=existing.id, status=existing.status, idempotency_key=existing.idempotency_key)
     execution = await load_execution(payload.execution_id, db)
+    tenant = await db.get(Tenant, execution.tenant_id)
+    billing_allowed = False
+    if tenant:
+        _, billing_allowed = await sync_billing_access(db, tenant)
+    if not tenant or not billing_allowed or tenant.status not in {TenantStatus.ACTIVE, TenantStatus.GRACE_PERIOD}:
+        await db.commit()
+        raise HTTPException(status_code=403, detail="Tenant sem permissão para enviar mensagens")
     connection = await db.scalar(select(WhatsAppConnection).where(WhatsAppConnection.tenant_id == execution.tenant_id, WhatsAppConnection.status == WhatsAppConnectionStatus.CONNECTED))
     if not connection:
         raise HTTPException(status_code=409, detail="WhatsApp do tenant não está conectado")

@@ -605,6 +605,11 @@
 
 /* Landing page alignment on phones */
 @media(max-width:560px){
+  .nexus-site{overflow-x:hidden}
+  .nexus-site .shell{width:min(100% - 32px,1180px)}
+  .nexus-site .nav{height:64px}
+  .nexus-site .nav .button.small{padding:10px 13px;font-size:11px}
+  .nexus-site .nexus-symbol{width:38px;height:38px}
   .nexus-site .nexus-hero,
   .nexus-site .demo-intro,
   .nexus-site .steps-layout,
@@ -620,13 +625,82 @@
   .nexus-site .steps-layout .eyebrow{justify-content:center}
   .nexus-site .nexus-hero .hero-copy>p,
   .nexus-site .outcomes-grid>p{margin-inline:auto}
+  .nexus-site .nexus-hero{min-height:0;padding:34px 0 48px;gap:6px}
+  .nexus-site .nexus-hero h1{font-size:39px;line-height:1.06;letter-spacing:-2.2px;margin:20px 0 18px}
+  .nexus-site .nexus-hero .hero-copy>p{font-size:15px;line-height:1.62}
   .nexus-site .hero-actions{align-items:stretch}
+  .nexus-site .hero-actions .button,
+  .nexus-site .hero-actions .secondary-button{width:100%;min-height:50px}
   .nexus-site .hero-proof{align-items:center}
+  .nexus-site .hero-proof{gap:10px 14px;margin-top:20px;font-size:10px}
   .nexus-site .outcomes-grid>div,
   .nexus-site .steps-layout li,
   .nexus-site .steps-layout li span,
   .nexus-site footer>.shell{align-items:center}
   .nexus-site .feature-icon{margin-inline:auto}
+  .nexus-site .nexus-visual{width:100%;min-height:330px;transform:scale(.68);transform-origin:center top;margin:0 0 -92px}
+  .nexus-site .outcomes{padding:28px 0}
+  .nexus-site .outcomes-grid{grid-template-columns:1fr;gap:20px}
+  .nexus-site .outcomes-grid>p{grid-column:auto;max-width:290px}
+  .nexus-site .outcomes-grid>div{padding:0}
+  .nexus-site .feature-section{padding:68px 0}
+  .nexus-site .section-heading{margin-bottom:34px}
+  .nexus-site .section-heading h2,
+  .nexus-site .demo-intro h2{font-size:30px;line-height:1.18;letter-spacing:-1.5px}
+  .nexus-site .section-heading>p,
+  .nexus-site .demo-intro>p{font-size:14px;line-height:1.6}
+  .nexus-site .feature-grid article{padding:25px 20px}
+  .nexus-site .demo-section{width:calc(100% - 24px);padding:44px 16px;margin-bottom:70px;border-radius:24px;gap:34px}
+  .nexus-site .demo-tabs{margin:24px 0}
+  .nexus-site .demo-tabs button{padding:9px 8px;font-size:9px}
+  .nexus-site .demo-device{width:min(310px,100%);border-width:5px;border-radius:24px}
   .nexus-site .demo-copy{border-left:0;border-top:2px solid #7a52e9;padding:18px 0 0}
+  .nexus-site .nexus-steps{padding:68px 0}
+  .nexus-site .steps-layout{gap:38px}
+  .nexus-site .steps-layout h2{font-size:32px;letter-spacing:-1.7px}
   .nexus-site .steps-layout li{flex-direction:column;gap:12px}
+  .nexus-site .steps-layout li{padding:21px 0}
+  .nexus-site .nexus-cta{margin-block:62px;padding:52px 18px;border-radius:24px}
+  .nexus-site .nexus-cta h2{font-size:30px;letter-spacing:-1.4px}
+  .nexus-site footer{padding:34px 0}
+}
+
+/* Account verification, trial and recovery */
+.trial-notice{display:flex;gap:12px;align-items:center;padding:13px 14px;border:1px solid #d8d2f5;border-radius:13px;background:linear-gradient(115deg,#f0edff,#edfbfc);color:#5d657e}
+.trial-notice strong{flex:0 0 auto;padding:6px 9px;border-radius:999px;background:#6542d9;color:white;font-size:10px}
+.trial-notice span{font-size:10px;line-height:1.45}
+.forgot-link{align-self:flex-end;margin-top:-5px;color:#6243d0;font-size:11px;font-weight:750}
+.auth-help-links{display:flex;justify-content:space-between;gap:14px;margin-top:-5px;color:#6243d0;font-size:11px;font-weight:750}
+.form-message.success{border-color:#bde7d8;background:#ebfaf5;color:#087857}
+.form-message.success a{color:inherit;font-weight:800;text-decoration:underline}
+.account-action-page{min-height:100vh;display:grid;place-items:center;align-content:center;gap:32px;padding:28px;background:radial-gradient(circle at 50% 0,#ede9ff,#f6f7fb 48%)}
+.account-action-page>section{width:min(100%,560px);padding:42px;text-align:center;border:1px solid #dedff0;border-radius:24px;background:white;box-shadow:0 28px 70px rgba(42,44,96,.12)}
+.account-action-page>section>span{font-size:9px;letter-spacing:1.8px;color:#6746d6;font-weight:800}
+.account-action-page h1{margin:16px 0 10px;font-size:30px;letter-spacing:-1.5px}
+.account-action-page p{color:#747c94;font-size:13px;line-height:1.6}
+.account-action-status{display:grid;gap:14px;margin-top:26px;padding:17px;border-radius:14px;font-size:12px}
+.account-action-status.success{background:#eaf9f4;color:#087857}.account-action-status.error{background:#fff0f0;color:#a33b46}
+.account-action-status a{color:inherit;font-weight:800}
+.trial-deadline{display:flex;align-items:center;gap:11px;margin:18px 0;padding:13px 14px;border:1px solid rgba(255,255,255,.16);border-radius:13px;background:rgba(255,255,255,.09)}
+.trial-deadline>svg{width:24px;height:24px;flex:0 0 24px;color:#63d7e2}
+.trial-deadline>span{display:grid;gap:3px;font-size:10px;color:rgba(255,255,255,.72)}
+.trial-deadline strong{color:white;font-size:11px}
+@media(max-width:560px){.account-action-page{padding:18px}.account-action-page>section{padding:30px 20px}.account-action-page h1{font-size:25px}.trial-notice{align-items:flex-start;flex-direction:column}}
+
+/* Compact authentication header on tablets and phones */
+@media(max-width:900px){
+  .auth-page{grid-template-rows:auto 1fr}
+  .auth-aside{min-height:auto;padding:18px 24px;display:flex;background:white;color:var(--ink);border-bottom:1px solid var(--line)}
+  .auth-aside .nexus-brand.is-light{color:var(--ink)}
+  .auth-aside .auth-quote,.auth-aside>small{display:none}
+  .auth-main{padding:28px 24px 40px;place-items:start center}
+  .auth-box h1{font-size:29px}
+}
+@media(max-width:560px){
+  .auth-aside{padding:14px 18px}
+  .auth-aside .nexus-symbol{width:38px;height:38px}
+  .auth-main{padding:24px 18px 34px}
+  .auth-box h1{font-size:26px;letter-spacing:-1px}
+  .auth-box>p{margin-bottom:22px;font-size:13px}
+  .form{gap:14px}
 }

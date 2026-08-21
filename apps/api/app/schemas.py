@@ -19,11 +19,28 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class EmailRequest(BaseModel):
+    email: EmailStr
+
+
+class TokenRequest(BaseModel):
+    token: str = Field(min_length=32, max_length=512)
+
+
+class ResetPasswordRequest(TokenRequest):
+    password: str = Field(min_length=10, max_length=128)
+
+
+class MessageRead(BaseModel):
+    message: str
+
+
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
     email: EmailStr
     full_name: str
+    email_verified: bool = False
 
 
 class AuthResponse(BaseModel):
@@ -72,6 +89,9 @@ class SubscriptionRead(BaseModel):
     status: SubscriptionStatus
     provider: str
     current_period_end: datetime | None = None
+    trial_ends_at: datetime | None = None
+    trial_days_remaining: int = 0
+    access_allowed: bool = False
     cancel_at_period_end: bool = False
 
 

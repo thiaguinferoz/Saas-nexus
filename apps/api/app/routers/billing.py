@@ -1,3 +1,4 @@
+import math
 from datetime import UTC, datetime
 
 import stripe
@@ -27,13 +28,26 @@ def get_provider() -> StripeBillingProvider:
 @router.get("/billing/subscription", response_model=SubscriptionRead | None)
 async def read_subscription(tenant: CurrentTenant, db: DbSession) -> SubscriptionRead | None:
     subscription = await db.scalar(select(Subscription).where(Subscription.tenant_id == tenant.id))
-    return SubscriptionRead.model_validate(subscription, from_attributes=True) if subscription else None
+    if not subscription:
+        return None
+    now = datetime.now(UTC)
+    trial_seconds = max(0.0, (subscription.trial_ends_at - now).total_seconds()) if subscription.trial_ends_at else 0.0
+    trial_active = subscription.status == SubscriptionStatus.TRIALING and trial_seconds > 0
+    return SubscriptionRead(
+        status=subscription.status,
+        provider=subscription.provider,
+        current_period_end=subscription.current_period_end,
+        trial_ends_at=subscription.trial_ends_at,
+        trial_days_remaining=math.ceil(trial_seconds / 86400) if trial_active else 0,
+        access_allowed=subscription.status == SubscriptionStatus.ACTIVE or trial_active,
+        cancel_at_period_end=subscription.cancel_at_period_end,
+    )
 
 
 @router.post("/billing/checkout", response_model=BillingSessionRead)
 async def create_checkout(tenant: CurrentTenant, user: CurrentUser, db: DbSession, _csrf: CsrfGuard) -> BillingSessionRead:
     subscription = await db.scalar(select(Subscription).where(Subscription.tenant_id == tenant.id))
-    if subscription and subscription.status in {SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING}:
+    if subscription and subscription.status == SubscriptionStatus.ACTIVE:
         raise HTTPException(status_code=409, detail="Tenant já possui assinatura ativa")
     if not subscription:
         subscription = Subscription(tenant_id=tenant.id, provider=settings.billing_provider)
@@ -87,6 +101,7 @@ async def apply_subscription_state(db: DbSession, data: dict) -> None:
     subscription.provider_subscription_id = provider_subscription_id or subscription.provider_subscription_id
     subscription.provider_customer_id = data.get("customer") or subscription.provider_customer_id
     subscription.current_period_end = timestamp(data.get("current_period_end"))
+    subscription.trial_ends_at = timestamp(data.get("trial_end")) or subscription.trial_ends_at
     subscription.cancel_at_period_end = bool(data.get("cancel_at_period_end", False))
     tenant = await db.get(Tenant, subscription.tenant_id)
     if not tenant:
@@ -129,7 +144,6 @@ async def stripe_webhook(request: Request, db: DbSession) -> dict[str, bool]:
             if subscription:
                 subscription.provider_customer_id = obj.get("customer") or subscription.provider_customer_id
                 subscription.provider_subscription_id = obj.get("subscription") or subscription.provider_subscription_id
-                subscription.status = SubscriptionStatus.INCOMPLETE
     elif event.type == "invoice.paid":
         customer_id = obj.get("customer")
         subscription = await db.scalar(select(Subscription).where(Subscription.provider_customer_id == customer_id))

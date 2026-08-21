@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     stripe_secret_key: str | None = None
     stripe_webhook_secret: str | None = None
     stripe_price_id: str | None = None
+    trial_days: int = Field(default=3, ge=1, le=30)
+    resend_api_key: str | None = None
+    email_from: str = "Nexus <contato@usenexusia.com>"
+    email_reply_to: str | None = None
+    email_verification_expire_hours: int = Field(default=24, ge=1, le=168)
+    password_reset_expire_minutes: int = Field(default=60, ge=10, le=1440)
     ycloud_api_key: str | None = None
     ycloud_webhook_secret: str | None = None
     meta_app_id: str | None = None

@@ -1,4 +1,3 @@
-import uuid
 import secrets
 from typing import Annotated
 
@@ -7,6 +6,7 @@ from fastapi import Cookie, Depends, Header, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.billing.access import sync_billing_access
 from app.database import get_db
 from app.models import Membership, Tenant, User
 from app.security import decode_access_token
@@ -27,6 +27,8 @@ async def get_current_user(
     user = await db.get(User, user_id)
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário inativo")
+    if not user.email_verified_at:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="E-mail ainda não confirmado")
     return user
 
 
@@ -54,6 +56,8 @@ async def get_current_tenant(db: DbSession, user: CurrentUser) -> Tenant:
     tenant = await db.scalar(statement)
     if not tenant:
         raise HTTPException(status_code=403, detail="Usuário sem organização")
+    await sync_billing_access(db, tenant)
+    await db.commit()
     return tenant
 
 

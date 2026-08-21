@@ -16,7 +16,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(new URL("/landing", request.url));
   }
 
-  if (SITE_HOSTS.has(hostname) && (pathname === "/login" || pathname === "/cadastro" || pathname.startsWith("/app"))) {
+  const accountRoutes = ["/login", "/cadastro", "/esqueci-minha-senha", "/reenviar-confirmacao", "/verificar-email", "/redefinir-senha"];
+  if (SITE_HOSTS.has(hostname) && (accountRoutes.includes(pathname) || pathname.startsWith("/app"))) {
     const destination = request.nextUrl.clone();
     destination.hostname = APP_HOST;
     destination.port = "";
@@ -28,5 +29,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/cadastro", "/app/:path*"],
+  matcher: ["/", "/login", "/cadastro", "/esqueci-minha-senha", "/reenviar-confirmacao", "/verificar-email", "/redefinir-senha", "/app/:path*"],
 };
