@@ -162,7 +162,10 @@ services:
         condition: service_healthy
     networks: [internal]
 
-    provisioning-worker:
+  # >>> ALTERAÇÃO TEMPORÁRIA PARA CORRIGIR A ENCRYPTION KEY DO N8N <<<
+  # Depois de rodar "rm -f /tmp/n8n_data/config" no console deste serviço,
+  # REMOVA o bloco "volumes:" abaixo (as duas linhas) e faça deploy de novo.
+  provisioning-worker:
     image: nexus-saas-stack-api:latest
     pull_policy: never
     restart: unless-stopped
@@ -178,7 +181,8 @@ services:
       redis:
         condition: service_healthy
     networks: [internal]
-    
+  # >>> FIM DA ALTERAÇÃO TEMPORÁRIA <<<
+
   support-worker:
     image: nexus-saas-stack-api:latest
     pull_policy: never
