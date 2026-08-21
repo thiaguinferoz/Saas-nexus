@@ -16,7 +16,7 @@ class TransactionalEmailService:
         if not self.settings.resend_api_key:
             raise EmailDeliveryError("Serviço de e-mail ainda não configurado")
 
-    async def send(self, *, to: str, subject: str, html_body: str, idempotency_key: str) -> None:
+    async def send(self, *, to: str, subject: str, html_body: str, idempotency_key: str, reply_to: str | None = None) -> None:
         headers = {
             "Authorization": f"Bearer {self.settings.resend_api_key}",
             "Content-Type": "application/json",
@@ -29,8 +29,8 @@ class TransactionalEmailService:
             "subject": subject,
             "html": html_body,
         }
-        if self.settings.email_reply_to:
-            payload["reply_to"] = self.settings.email_reply_to
+        if reply_to or self.settings.email_reply_to:
+            payload["reply_to"] = reply_to or self.settings.email_reply_to
         async with httpx.AsyncClient(timeout=15) as client:
             response = await client.post("https://api.resend.com/emails", headers=headers, json=payload)
         if response.status_code >= 400:
@@ -65,6 +65,45 @@ class TransactionalEmailService:
                 button_label="Criar nova senha",
                 button_url=url,
                 footnote="Este link expira em 60 minutos. Se não foi você, nenhuma alteração será feita.",
+            ),
+        )
+
+    async def send_support_ticket(
+        self,
+        *,
+        to: str,
+        requester_email: str,
+        requester_name: str,
+        company_name: str,
+        ticket_id: uuid.UUID,
+        category: str,
+        priority: str,
+        subject: str,
+        message: str,
+        preferred_channel: str,
+        contact_value: str | None,
+    ) -> None:
+        details = (
+            f"<strong>Empresa:</strong> {html.escape(company_name)}<br>"
+            f"<strong>Solicitante:</strong> {html.escape(requester_name)} ({html.escape(requester_email)})<br>"
+            f"<strong>Categoria:</strong> {html.escape(category)}<br>"
+            f"<strong>Prioridade:</strong> {html.escape(priority)}<br>"
+            f"<strong>Retorno:</strong> {html.escape(preferred_channel)}"
+        )
+        if contact_value:
+            details += f" — {html.escape(contact_value)}"
+        details += f"<br><br><strong>Mensagem:</strong><br>{html.escape(message).replace(chr(10), '<br>')}"
+        await self.send(
+            to=to,
+            subject=f"[Nexus] {subject}",
+            idempotency_key=f"support-{ticket_id}",
+            reply_to=requester_email,
+            html_body=_email_layout(
+                title="Nova solicitação de suporte",
+                body=details,
+                button_label="Abrir painel Nexus",
+                button_url=f"{self.settings.frontend_url}/app",
+                footnote=f"Ticket {ticket_id}. A solicitação também permanece registrada no banco da plataforma.",
             ),
         )
 

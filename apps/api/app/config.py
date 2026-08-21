@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     resend_api_key: str | None = None
     email_from: str = "Nexus <contato@usenexusia.com>"
     email_reply_to: str | None = None
+    support_email: str | None = None
     email_verification_expire_hours: int = Field(default=24, ge=1, le=168)
     password_reset_expire_minutes: int = Field(default=60, ge=10, le=1440)
     ycloud_api_key: str | None = None
