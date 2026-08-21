@@ -12,6 +12,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  if (SITE_HOSTS.has(hostname) && pathname === "/") {
+    return NextResponse.rewrite(new URL("/landing", request.url));
+  }
+
   if (SITE_HOSTS.has(hostname) && (pathname === "/login" || pathname === "/cadastro" || pathname.startsWith("/app"))) {
     const destination = request.nextUrl.clone();
     destination.hostname = APP_HOST;
