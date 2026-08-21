@@ -2380,7 +2380,8 @@
     "availableInMCP": false,
     "timeSavedMode": "fixed",
     "timezone": "America/Sao_Paulo",
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "NEXUSERRHANDLER1"
   },
   "versionId": "93ea1c50-587e-4d95-abff-089d6d2e5b84",
   "meta": {

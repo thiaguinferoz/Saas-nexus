@@ -9,6 +9,7 @@ $NexusApiBase = 'http://api:8000'
 $workflow = Get-Content -Raw -LiteralPath $Source | ConvertFrom-Json -Depth 100
 $workflow.name = 'NEXUS - WORKFLOW BASE MULTITENANT'
 $workflow.active = $false
+$workflow.settings | Add-Member -Force -NotePropertyName errorWorkflow -NotePropertyValue 'NEXUSERRHANDLER1'
 
 $webhook = $workflow.nodes | Where-Object name -eq 'Webhook YCloud'
 $oldWebhookConnection = $workflow.connections.'Webhook YCloud'
@@ -241,6 +242,7 @@ $workflow.connections | Add-Member -Force -NotePropertyName 'Salvar ID da mensag
 $workflow | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $Destination -Encoding utf8
 
 $errorWorkflow = Get-Content -Raw -LiteralPath $ErrorDestination | ConvertFrom-Json -Depth 30
+$errorWorkflow | Add-Member -Force -NotePropertyName id -NotePropertyValue 'NEXUSERRHANDLER1'
 $errorCallback = $errorWorkflow.nodes | Where-Object name -eq 'Reportar falha ao FastAPI'
 if (-not $errorCallback) {
   throw "Nó 'Reportar falha ao FastAPI' ausente em $ErrorDestination"

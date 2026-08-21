@@ -18,11 +18,13 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -58,6 +60,7 @@ services:
       N8N_HOST: ${N8N_HOST:-n8n.usenexusia.com}
       N8N_PROTOCOL: https
       N8N_PORT: 5678
+      N8N_LISTEN_ADDRESS: 0.0.0.0
       N8N_EDITOR_BASE_URL: https://${N8N_HOST:-n8n.usenexusia.com}/
       N8N_WEBHOOK_URL: https://${N8N_HOST:-n8n.usenexusia.com}/
       N8N_PROXY_HOPS: 1

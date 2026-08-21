@@ -82,8 +82,8 @@ No serviço n8n, use `.env.n8n.example` como referência. `N8N_ENCRYPTION_KEY` p
 5. Selecione `Nexus FastAPI Service` em `Contexto Nexus`, `Marcar execução em andamento`, `Indicador de digitação via FastAPI`, `Baixar imagem YCloud`, `Baixar audio YCloud`, `Solicitar envio ao FastAPI`, `Confirmar execução no FastAPI` e `Reportar falha ao FastAPI` no workflow de erro.
 6. Reconecte somente as credenciais Redis e Google Gemini já usadas pelo motor. A credencial da YCloud não fica mais dentro do n8n.
 7. Confirme que o hostname interno `api` resolve na rede privada; os workflows versionados usam a base não secreta fixa `http://api:8000` e não leem variáveis de ambiente em expressões.
-8. No workflow principal, configure `NEXUS - ERROR HANDLER` como workflow de erro.
-9. Ative os dois workflows e copie a URL de produção `/webhook/nexus-automation-v1` para `N8N_INTERNAL_WEBHOOK_URL` dos workers.
+8. Confirme que o workflow principal está vinculado ao `NEXUS - ERROR HANDLER`; o JSON versionado já usa o ID determinístico `NEXUSERRHANDLER1`.
+9. Publique os dois workflows e copie a URL de produção `/webhook/nexus-automation-v1` para `N8N_INTERNAL_WEBHOOK_URL` dos workers.
 10. Faça uma chamada controlada e confirme uma execução no n8n antes de liberar tráfego real.
 
 Os dois arquivos JSON são gerados por `tools/build_multitenant_workflow.ps1`. A constante `$NexusApiBase` mantém a base interna em um único ponto do gerador. Mudanças reutilizáveis devem ser feitas no script e depois regeneradas; não mantenha edições divergentes apenas dentro do editor do n8n. O acesso de expressões às variáveis do processo n8n deve permanecer bloqueado.

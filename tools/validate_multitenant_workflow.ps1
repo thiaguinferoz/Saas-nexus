@@ -45,6 +45,10 @@ if ('Erro do workflow' -notin @($errorData.nodes.name) -or 'Reportar falha ao Fa
   Write-Error 'Workflow de erro não contém os nós obrigatórios'
   exit 1
 }
+if ($errorData.id -ne 'NEXUSERRHANDLER1' -or $data.settings.errorWorkflow -ne 'NEXUSERRHANDLER1') {
+  Write-Error 'Workflow principal não está vinculado ao error handler determinístico'
+  exit 1
+}
 
 foreach ($candidate in @($raw, $errorRaw)) {
   if ($candidate.Contains('$env.') -or $candidate.Contains('NEXUS_API_INTERNAL_URL')) {

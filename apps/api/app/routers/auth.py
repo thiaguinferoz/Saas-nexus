@@ -7,14 +7,21 @@ from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy import select, update
 
 from app.config import get_settings
-from app.dependencies import CsrfGuard, CurrentTenant, CurrentUser, DbSession
+from app.dependencies import CsrfGuard, CurrentTenant, CurrentUser, DbSession, is_platform_admin
 from app.email import EmailDeliveryError, TransactionalEmailService
 from app.models import AuthToken, AuthTokenPurpose, Membership, OutboxEvent, Subscription, SubscriptionStatus, Tenant, TenantSettings, TenantStatus, User
-from app.schemas import AuthResponse, EmailRequest, LoginRequest, MessageRead, RegisterRequest, ResetPasswordRequest, TokenRequest
+from app.schemas import AuthResponse, EmailRequest, LoginRequest, MessageRead, RegisterRequest, ResetPasswordRequest, TokenRequest, UserRead
 from app.security import create_access_token, hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
+
+
+def build_auth_response(user: User, tenant_id) -> AuthResponse:
+    user_payload = UserRead.model_validate(user).model_copy(
+        update={"is_platform_admin": is_platform_admin(user)}
+    )
+    return AuthResponse(user=user_payload, tenant_id=tenant_id)
 
 
 def set_auth_cookie(response: Response, token: str) -> None:
@@ -97,7 +104,7 @@ async def verify_email(payload: TokenRequest, response: Response, db: DbSession)
     membership = await begin_trial(db, user)
     await db.commit()
     set_auth_cookie(response, create_access_token(user.id, user.session_version))
-    return AuthResponse(user=user, tenant_id=membership.tenant_id)
+    return build_auth_response(user, membership.tenant_id)
 
 
 @router.post("/resend-verification", response_model=MessageRead)
@@ -156,7 +163,7 @@ async def login(payload: LoginRequest, response: Response, db: DbSession) -> Aut
     if not membership:
         raise HTTPException(status_code=403, detail="Usuário sem organização")
     set_auth_cookie(response, create_access_token(user.id, user.session_version))
-    return AuthResponse(user=user, tenant_id=membership.tenant_id)
+    return build_auth_response(user, membership.tenant_id)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -167,4 +174,4 @@ async def logout(response: Response, _csrf: CsrfGuard) -> None:
 
 @router.get("/me", response_model=AuthResponse)
 async def me(user: CurrentUser, tenant: CurrentTenant) -> AuthResponse:
-    return AuthResponse(user=user, tenant_id=tenant.id)
+    return build_auth_response(user, tenant.id)

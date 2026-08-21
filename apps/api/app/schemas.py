@@ -41,6 +41,7 @@ class UserRead(BaseModel):
     email: EmailStr
     full_name: str
     email_verified: bool = False
+    is_platform_admin: bool = False
 
 
 class AuthResponse(BaseModel):
@@ -207,3 +208,46 @@ class SupportTicketRead(BaseModel):
     contact_value: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class AdminSummaryRead(BaseModel):
+    total_tenants: int
+    operational_tenants: int
+    active_subscriptions: int
+    trialing_subscriptions: int
+    connected_whatsapp: int
+    open_support_tickets: int
+
+
+class AdminTenantRead(BaseModel):
+    id: uuid.UUID
+    name: str
+    slug: str
+    status: TenantStatus
+    owner_email: EmailStr | None = None
+    subscription_status: SubscriptionStatus | None = None
+    trial_ends_at: datetime | None = None
+    whatsapp_status: WhatsAppConnectionStatus | None = None
+    created_at: datetime
+
+
+class AdminSupportTicketRead(BaseModel):
+    id: uuid.UUID
+    tenant_name: str
+    category: SupportTicketCategory
+    priority: SupportTicketPriority
+    status: SupportTicketStatus
+    subject: str
+    preferred_channel: str
+    contact_value: str | None = None
+    created_at: datetime
+
+
+class AdminOverviewRead(BaseModel):
+    summary: AdminSummaryRead
+    tenants: list[AdminTenantRead]
+    support_tickets: list[AdminSupportTicketRead]
+
+
+class AdminSupportTicketUpdate(BaseModel):
+    status: SupportTicketStatus

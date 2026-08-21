@@ -27,8 +27,9 @@ Fundação do produto self-service com landing page, painel multi-tenant e API c
 - Login usa cookie seguro e HttpOnly.
 - Preferências possuem versão e bloqueio de sobrescrita concorrente com `If-Match`.
 - Landing, cadastro, login e painel configurável estão implementados.
+- A central administrativa lista clientes, estágios de assinatura, conexões e chamados. O backend libera essa área somente aos e-mails definidos em `PLATFORM_ADMIN_EMAILS`.
 - O painel salva empresa, timezone, horários, tom, instruções e fallback humano.
-- O contrato FastAPI ↔ n8n, as filas e os workers estão implementados no código, mas o fluxo só fica operacional após importar, credenciar, testar e ativar os dois workflows.
+- O contrato FastAPI ↔ n8n, as filas e os workers estão implementados no código, mas o fluxo só fica operacional após importar, credenciar, testar e publicar os dois workflows.
 - O adapter de billing inclui Checkout, Portal e tratamento idempotente de webhooks Stripe. Pagamentos permanecem indisponíveis até configurar chaves reais, preço recorrente e endpoint de webhook no mesmo modo, teste ou produção.
 - O Embedded Signup/YCloud possui os contratos de sessão, vínculo e webhook. A conexão real depende das credenciais, permissões de parceiro e validação ponta a ponta com Meta/YCloud.
 - Notificações transacionais e de suporte dependem da configuração e da entrega confirmada no Resend.

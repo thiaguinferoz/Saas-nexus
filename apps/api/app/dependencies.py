@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing.access import sync_billing_access
+from app.config import get_settings
 from app.database import get_db
 from app.models import Membership, Tenant, User
 from app.security import decode_access_token
@@ -35,6 +36,27 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def is_platform_admin(user: User) -> bool:
+    configured = {
+        email.strip().lower()
+        for email in get_settings().platform_admin_emails.split(",")
+        if email.strip()
+    }
+    return user.email.lower() in configured
+
+
+async def require_platform_admin(user: CurrentUser) -> User:
+    if not is_platform_admin(user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito aos administradores Nexus",
+        )
+    return user
+
+
+CurrentPlatformAdmin = Annotated[User, Depends(require_platform_admin)]
 
 
 async def verify_csrf(

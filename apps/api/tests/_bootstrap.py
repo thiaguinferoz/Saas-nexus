@@ -13,6 +13,7 @@ def configure_test_environment() -> None:
         "STRIPE_PRICE_ID": "price_unit",
         "RESEND_API_KEY": "re_test_unit",
         "REDIS_STREAM_PREFIX": "nexus-test",
+        "PLATFORM_ADMIN_EMAILS": "admin@example.com, operations@example.com",
     }
     for name, value in defaults.items():
         os.environ.setdefault(name, value)
