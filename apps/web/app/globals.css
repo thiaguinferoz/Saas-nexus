@@ -839,3 +839,72 @@ h1,h2,h3,h4,.brand,.nexus-brand,.button,button{font-family:var(--font-manrope),v
   .auth-box>p{margin-bottom:22px;font-size:13px}
   .form{gap:14px}
 }
+
+/* Comfortable type scale */
+body{font-size:17px;line-height:1.55}
+.nexus-site .nav-links,.nexus-site .text-button{font-size:16px}
+.nexus-site .button.small{font-size:15px}
+.nexus-site .hero-copy>p{font-size:20px;line-height:1.72}
+.nexus-site .hero-proof{font-size:14px}
+.nexus-site .outcomes-grid>p{font-size:16px}
+.nexus-site .outcomes-grid span{font-size:12px}
+.nexus-site .feature-grid h3{font-size:19px}
+.nexus-site .feature-grid p{font-size:15px;line-height:1.72}
+.nexus-site .feature-grid a{font-size:14px}
+.nexus-site .section-heading>p,.nexus-site .demo-intro>p,.nexus-site .steps-layout>div>p{font-size:17px}
+.nexus-site .steps-layout li span{font-size:15px}
+.nexus-site .steps-layout li strong{font-size:18px}
+.nexus-site .nexus-cta>p{font-size:17px}
+.nexus-site .demo-tabs button{font-size:12px}
+.nexus-site .demo-copy>span{font-size:10px}
+.nexus-site .demo-copy p{font-size:14px}
+.nexus-site .demo-message{font-size:12px}
+.nexus-site .demo-message b,.nexus-site .demo-message time,.nexus-site .ai-status{font-size:9px}
+.nexus-site footer p{font-size:13px}
+.nexus-site footer>.shell>span{font-size:11px}
+
+.auth-box>p{font-size:15px;line-height:1.6}
+.form label{font-size:14px}
+.form input,.form textarea,.form select{font-size:15px}
+.auth-switch{font-size:14px}
+.auth-help-links,.forgot-link{font-size:13px}
+.trial-notice span{font-size:12px}
+.form-message,.account-action-status{font-size:14px}
+
+.client-portal{font-size:15px}
+.client-portal .sidebar nav button{font-size:13px}
+.client-portal .sidebar-label,.client-portal .sidebar-footer,.client-portal .workspace-card small{font-size:10px}
+.client-portal .workspace-card strong,.client-portal .profile-copy strong{font-size:13px}
+.client-portal .sidebar-support span,.client-portal .portal-breadcrumb,.client-portal .profile-copy small{font-size:11px}
+.client-portal .sidebar-support strong{font-size:12px}
+.client-portal .dash-head>div>small{font-size:11px}
+.client-portal .dash-head p{font-size:14px}
+.client-portal .status-pill{font-size:11px}
+.client-portal .metric-grid article>span,.client-portal .metric-grid article small{font-size:11px}
+.client-portal .overview-section-title p,.client-portal .setup-compact-list small,.client-portal .activity-card small,.client-portal .quick-actions small{font-size:11px}
+.client-portal .quick-actions strong,.client-portal .setup-compact-list strong,.client-portal .activity-card strong{font-size:13px}
+.client-portal .panel-title h2,.client-portal .module-card-head h2{font-size:20px}
+.client-portal .panel-title p,.client-portal .module-card-head p{font-size:14px}
+.client-portal .settings-grid label,.client-portal .settings-stack label,.client-portal .support-form>label,.client-portal .support-contact-grid label,.client-portal .source-form label{font-size:13px}
+.client-portal .settings-grid input,.client-portal .settings-grid select,.client-portal .settings-stack input,.client-portal .settings-stack select,.client-portal .settings-stack textarea,.client-portal .support-form input,.client-portal .support-form textarea,.client-portal .support-form select,.client-portal .source-form input,.client-portal .source-form textarea{font-size:14px}
+.client-portal .automation-explainer p,.client-portal .support-hero p{font-size:13px}
+.client-portal .source-picker button small,.client-portal .goal-grid button small,.client-portal .source-list small,.client-portal .support-category small{font-size:11px}
+.client-portal .admin-banner small,.client-portal .admin-section-head p,.client-portal .admin-metrics small,.client-portal .admin-metrics p{font-size:11px}
+.client-portal .admin-banner p{font-size:14px}
+.client-portal .admin-section-head h2{font-size:19px}
+.client-portal .admin-table-head{font-size:10px}
+.client-portal .admin-table-row strong{font-size:12px}
+.client-portal .admin-table-row small,.client-portal .admin-table-row>span:not(:first-child),.client-portal .admin-table-row time{font-size:11px}
+.client-portal .admin-ticket-list h3{font-size:14px}
+.client-portal .admin-ticket-list p{font-size:11px}
+
+@media(max-width:680px){
+  body{font-size:16px}
+  .nexus-site .nav-actions .button.small{font-size:13px}
+  .nexus-site .hero-copy>p{font-size:17px}
+  .nexus-site .section-heading>p,.nexus-site .demo-intro>p,.nexus-site .steps-layout>div>p{font-size:15px}
+  .nexus-site .feature-grid p{font-size:15px}
+  .nexus-site .demo-tabs button{font-size:10px}
+  .client-portal{font-size:14px}
+  .client-portal .dash-head p{font-size:13px}
+}
