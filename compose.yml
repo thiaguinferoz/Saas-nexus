@@ -171,8 +171,6 @@ services:
     restart: unless-stopped
     command: ["python", "-m", "app.workers.provisioning_worker"]
     env_file: .env
-    volumes:
-      - n8n_data:/tmp/n8n_data
     depends_on:
       migrate:
         condition: service_completed_successfully
