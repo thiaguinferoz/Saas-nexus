@@ -602,3 +602,31 @@
   .client-portal .catalog-table-head,.client-portal .catalog-table-row{min-width:580px}
   .client-portal .lab-message{max-width:88%}
 }
+
+/* Landing page alignment on phones */
+@media(max-width:560px){
+  .nexus-site .nexus-hero,
+  .nexus-site .demo-intro,
+  .nexus-site .steps-layout,
+  .nexus-site .outcomes-grid,
+  .nexus-site .feature-grid article,
+  .nexus-site footer>.shell{text-align:center}
+  .nexus-site .nexus-hero .eyebrow,
+  .nexus-site .demo-intro .eyebrow,
+  .nexus-site .hero-actions,
+  .nexus-site .hero-proof,
+  .nexus-site .demo-tabs,
+  .nexus-site .feature-grid a,
+  .nexus-site .steps-layout .eyebrow{justify-content:center}
+  .nexus-site .nexus-hero .hero-copy>p,
+  .nexus-site .outcomes-grid>p{margin-inline:auto}
+  .nexus-site .hero-actions{align-items:stretch}
+  .nexus-site .hero-proof{align-items:center}
+  .nexus-site .outcomes-grid>div,
+  .nexus-site .steps-layout li,
+  .nexus-site .steps-layout li span,
+  .nexus-site footer>.shell{align-items:center}
+  .nexus-site .feature-icon{margin-inline:auto}
+  .nexus-site .demo-copy{border-left:0;border-top:2px solid #7a52e9;padding:18px 0 0}
+  .nexus-site .steps-layout li{flex-direction:column;gap:12px}
+}
