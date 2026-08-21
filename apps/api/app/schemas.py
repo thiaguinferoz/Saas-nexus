@@ -90,8 +90,10 @@ class SubscriptionRead(BaseModel):
     provider: str
     current_period_end: datetime | None = None
     trial_ends_at: datetime | None = None
+    grace_ends_at: datetime | None = None
     trial_days_remaining: int = 0
     access_allowed: bool = False
+    management_available: bool = False
     cancel_at_period_end: bool = False
 
 

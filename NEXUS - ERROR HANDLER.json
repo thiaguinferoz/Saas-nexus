@@ -5,14 +5,17 @@
       "parameters": {},
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [-320, 0],
+      "position": [
+        -320,
+        0
+      ],
       "id": "c316af8e-b5b5-4576-a324-342437eced40",
       "name": "Erro do workflow"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.NEXUS_API_INTERNAL_URL + '/internal/v1/executions/by-n8n/' + $json.execution.id + '/result' }}",
+        "url": "={{ 'http://api:8000/internal/v1/executions/by-n8n/' + $json.execution.id + '/result' }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -23,7 +26,10 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-80, 0],
+      "position": [
+        -80,
+        0
+      ],
       "id": "ae529096-17bc-438d-a3d0-bfe70ace5df4",
       "name": "Reportar falha ao FastAPI",
       "credentials": {
@@ -36,12 +42,24 @@
   ],
   "connections": {
     "Erro do workflow": {
-      "main": [[{"node": "Reportar falha ao FastAPI", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Reportar falha ao FastAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
-  "settings": {"executionOrder": "v1"},
+  "settings": {
+    "executionOrder": "v1"
+  },
   "versionId": "31cc9180-573e-4586-960a-4655cfa1bbc4",
-  "meta": {"templateCredsSetupCompleted": false},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
   "tags": []
 }

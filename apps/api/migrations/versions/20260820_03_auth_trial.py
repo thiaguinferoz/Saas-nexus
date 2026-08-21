@@ -22,6 +22,33 @@ def upgrade() -> None:
     op.execute("UPDATE users SET email_verified_at = now()")
     op.add_column("subscriptions", sa.Column("trial_started_at", sa.DateTime(timezone=True), nullable=True))
     op.add_column("subscriptions", sa.Column("trial_ends_at", sa.DateTime(timezone=True), nullable=True))
+    op.execute(
+        """
+        WITH eligible_trials AS (
+            UPDATE subscriptions
+            SET status = 'TRIALING',
+                trial_started_at = now(),
+                trial_ends_at = now() + interval '3 days',
+                current_period_end = now() + interval '3 days'
+            WHERE status = 'PENDING'
+              AND provider_subscription_id IS NULL
+              AND trial_started_at IS NULL
+            RETURNING tenant_id
+        )
+        UPDATE tenants AS tenant
+        SET status = CASE
+            WHEN EXISTS (
+                SELECT 1
+                FROM whatsapp_connections AS connection
+                WHERE connection.tenant_id = tenant.id
+                  AND connection.status = 'CONNECTED'
+            ) THEN 'ACTIVE'::tenantstatus
+            ELSE 'AWAITING_WHATSAPP'::tenantstatus
+        END
+        FROM eligible_trials
+        WHERE tenant.id = eligible_trials.tenant_id
+        """
+    )
     op.create_table(
         "auth_tokens",
         sa.Column("id", sa.Uuid(), nullable=False),

@@ -39,10 +39,22 @@ if ($errors.Count) {
   exit 1
 }
 
-$errorData = Get-Content -Raw -LiteralPath $ErrorWorkflow | ConvertFrom-Json -Depth 30
+$errorRaw = Get-Content -Raw -LiteralPath $ErrorWorkflow
+$errorData = $errorRaw | ConvertFrom-Json -Depth 30
 if ('Erro do workflow' -notin @($errorData.nodes.name) -or 'Reportar falha ao FastAPI' -notin @($errorData.nodes.name)) {
   Write-Error 'Workflow de erro não contém os nós obrigatórios'
   exit 1
+}
+
+foreach ($candidate in @($raw, $errorRaw)) {
+  if ($candidate.Contains('$env.') -or $candidate.Contains('NEXUS_API_INTERNAL_URL')) {
+    Write-Error 'Workflow ainda depende de acesso amplo a variáveis de ambiente do n8n'
+    exit 1
+  }
+  if (-not $candidate.Contains('http://api:8000/internal/v1/')) {
+    Write-Error 'Workflow não contém a base interna esperada da API Nexus'
+    exit 1
+  }
 }
 
 Write-Output "Workflows válidos: $($data.nodes.Count) nós no fluxo principal, error handler presente e nenhuma regra legada."

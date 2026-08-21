@@ -31,8 +31,11 @@ class TransactionalEmailService:
         }
         if reply_to or self.settings.email_reply_to:
             payload["reply_to"] = reply_to or self.settings.email_reply_to
-        async with httpx.AsyncClient(timeout=15) as client:
-            response = await client.post("https://api.resend.com/emails", headers=headers, json=payload)
+        try:
+            async with httpx.AsyncClient(timeout=15) as client:
+                response = await client.post("https://api.resend.com/emails", headers=headers, json=payload)
+        except httpx.HTTPError as exc:
+            raise EmailDeliveryError("Não foi possível conectar ao serviço de e-mail agora") from exc
         if response.status_code >= 400:
             raise EmailDeliveryError("Não foi possível enviar o e-mail agora")
 

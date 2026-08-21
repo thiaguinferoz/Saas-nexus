@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str | None = None
     stripe_price_id: str | None = None
     trial_days: int = Field(default=3, ge=1, le=30)
+    billing_grace_days: int = Field(default=3, ge=0, le=30)
     resend_api_key: str | None = None
     email_from: str = "Nexus <contato@usenexusia.com>"
     email_reply_to: str | None = None

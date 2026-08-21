@@ -96,7 +96,7 @@ async def verify_email(payload: TokenRequest, response: Response, db: DbSession)
     token_record.used_at = now
     membership = await begin_trial(db, user)
     await db.commit()
-    set_auth_cookie(response, create_access_token(user.id))
+    set_auth_cookie(response, create_access_token(user.id, user.session_version))
     return AuthResponse(user=user, tenant_id=membership.tenant_id)
 
 
@@ -138,6 +138,7 @@ async def reset_password(payload: ResetPasswordRequest, db: DbSession) -> Messag
         raise HTTPException(status_code=400, detail="Conta não encontrada")
     now = datetime.now(UTC)
     user.password_hash = hash_password(payload.password)
+    user.session_version += 1
     token_record.used_at = now
     await db.execute(update(AuthToken).where(AuthToken.user_id == user.id, AuthToken.purpose == AuthTokenPurpose.RESET_PASSWORD, AuthToken.used_at.is_(None)).values(used_at=now))
     await db.commit()
@@ -154,7 +155,7 @@ async def login(payload: LoginRequest, response: Response, db: DbSession) -> Aut
     membership = await db.scalar(select(Membership).where(Membership.user_id == user.id).limit(1))
     if not membership:
         raise HTTPException(status_code=403, detail="Usuário sem organização")
-    set_auth_cookie(response, create_access_token(user.id))
+    set_auth_cookie(response, create_access_token(user.id, user.session_version))
     return AuthResponse(user=user, tenant_id=membership.tenant_id)
 
 

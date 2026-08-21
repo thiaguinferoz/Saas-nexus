@@ -21,12 +21,14 @@ async def get_current_user(
     if not access_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão ausente")
     try:
-        user_id = decode_access_token(access_token)
+        user_id, session_version = decode_access_token(access_token)
     except (jwt.InvalidTokenError, ValueError):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida") from None
     user = await db.get(User, user_id)
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Usuário inativo")
+    if user.session_version != session_version:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão revogada")
     if not user.email_verified_at:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="E-mail ainda não confirmado")
     return user

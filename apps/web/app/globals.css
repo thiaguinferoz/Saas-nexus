@@ -681,10 +681,10 @@
 .account-action-status{display:grid;gap:14px;margin-top:26px;padding:17px;border-radius:14px;font-size:12px}
 .account-action-status.success{background:#eaf9f4;color:#087857}.account-action-status.error{background:#fff0f0;color:#a33b46}
 .account-action-status a{color:inherit;font-weight:800}
-.trial-deadline{display:flex;align-items:center;gap:11px;margin:18px 0;padding:13px 14px;border:1px solid rgba(255,255,255,.16);border-radius:13px;background:rgba(255,255,255,.09)}
-.trial-deadline>svg{width:24px;height:24px;flex:0 0 24px;color:#63d7e2}
-.trial-deadline>span{display:grid;gap:3px;font-size:10px;color:rgba(255,255,255,.72)}
-.trial-deadline strong{color:white;font-size:11px}
+.trial-deadline,.billing-account-notice{position:relative;z-index:2;display:flex;align-items:center;gap:11px;margin:18px 0;padding:13px 14px;border:1px solid rgba(255,255,255,.16);border-radius:13px;background:rgba(255,255,255,.09)}
+.trial-deadline>svg,.billing-account-notice>svg{width:24px;height:24px;flex:0 0 24px;color:#63d7e2}
+.trial-deadline>span,.billing-account-notice>span{display:grid;gap:3px;font-size:10px;color:rgba(255,255,255,.72)}
+.trial-deadline strong,.billing-account-notice strong{color:white;font-size:11px}
 @media(max-width:560px){.account-action-page{padding:18px}.account-action-page>section{padding:30px 20px}.account-action-page h1{font-size:25px}.trial-notice{align-items:flex-start;flex-direction:column}}
 
 /* Compact authentication header on tablets and phones */

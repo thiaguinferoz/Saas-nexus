@@ -393,7 +393,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.NEXUS_API_INTERNAL_URL + '/internal/v1/messages' }}",
+        "url": "http://api:8000/internal/v1/messages",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -420,7 +420,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.NEXUS_API_INTERNAL_URL + '/internal/v1/typing' }}",
+        "url": "http://api:8000/internal/v1/typing",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {},
@@ -1293,7 +1293,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.NEXUS_API_INTERNAL_URL + '/internal/v1/executions/' + $('Dados').item.json.executionId + '/media' }}",
+        "url": "={{ 'http://api:8000/internal/v1/executions/' + $('Dados').item.json.executionId + '/media' }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {
@@ -1374,7 +1374,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.NEXUS_API_INTERNAL_URL + '/internal/v1/executions/' + $('Dados').item.json.executionId + '/media' }}",
+        "url": "={{ 'http://api:8000/internal/v1/executions/' + $('Dados').item.json.executionId + '/media' }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {
@@ -1628,7 +1628,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ $env.NEXUS_API_INTERNAL_URL + '/internal/v1/executions/' + $json.body.execution_id + '/context' }}",
+        "url": "={{ 'http://api:8000/internal/v1/executions/' + $json.body.execution_id + '/context' }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {}
@@ -1651,7 +1651,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.NEXUS_API_INTERNAL_URL + '/internal/v1/executions/' + $json.execution_id + '/result' }}",
+        "url": "={{ 'http://api:8000/internal/v1/executions/' + $json.execution_id + '/result' }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -1691,7 +1691,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.NEXUS_API_INTERNAL_URL + '/internal/v1/executions/' + $('Dados').item.json.executionId + '/result' }}",
+        "url": "={{ 'http://api:8000/internal/v1/executions/' + $('Dados').item.json.executionId + '/result' }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,

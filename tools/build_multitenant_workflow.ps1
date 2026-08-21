@@ -1,7 +1,10 @@
 param(
   [string]$Source = (Join-Path $PSScriptRoot '..\IA VET CAIÇARA - BASE SEM CATALOGO.json'),
-  [string]$Destination = (Join-Path $PSScriptRoot '..\NEXUS - WORKFLOW BASE MULTITENANT.json')
+  [string]$Destination = (Join-Path $PSScriptRoot '..\NEXUS - WORKFLOW BASE MULTITENANT.json'),
+  [string]$ErrorDestination = (Join-Path $PSScriptRoot '..\NEXUS - ERROR HANDLER.json')
 )
+
+$NexusApiBase = 'http://api:8000'
 
 $workflow = Get-Content -Raw -LiteralPath $Source | ConvertFrom-Json -Depth 100
 $workflow.name = 'NEXUS - WORKFLOW BASE MULTITENANT'
@@ -24,7 +27,7 @@ $workflow.connections | Add-Member -Force -NotePropertyName 'Entrada Nexus (Fast
 $contextNode = [pscustomobject]@{
   parameters = [pscustomobject]@{
     method = 'GET'
-    url = "={{ `$env.NEXUS_API_INTERNAL_URL + '/internal/v1/executions/' + `$json.body.execution_id + '/context' }}"
+    url = "={{ '$NexusApiBase/internal/v1/executions/' + `$json.body.execution_id + '/context' }}"
     authentication = 'genericCredentialType'
     genericAuthType = 'httpHeaderAuth'
     options = [pscustomobject]@{}
@@ -44,7 +47,7 @@ $workflow.connections | Add-Member -Force -NotePropertyName 'Contexto Nexus' -No
 $runningCallback = [pscustomobject]@{
   parameters = [pscustomobject]@{
     method = 'POST'
-    url = '={{ $env.NEXUS_API_INTERNAL_URL + ''/internal/v1/executions/'' + $json.execution_id + ''/result'' }}'
+    url = "={{ '$NexusApiBase/internal/v1/executions/' + `$json.execution_id + '/result' }}"
     authentication = 'genericCredentialType'
     genericAuthType = 'httpHeaderAuth'
     sendBody = $true
@@ -171,14 +174,14 @@ if ($imageAnalyzer) {
 foreach ($mediaNodeName in @('Baixar imagem YCloud', 'Baixar audio YCloud')) {
   $mediaNode = $workflow.nodes | Where-Object name -eq $mediaNodeName
   if ($mediaNode) {
-    $mediaNode.parameters.url = '={{ $env.NEXUS_API_INTERNAL_URL + ''/internal/v1/executions/'' + $(''Dados'').item.json.executionId + ''/media'' }}'
+    $mediaNode.parameters.url = "={{ '$NexusApiBase/internal/v1/executions/' + `$('Dados').item.json.executionId + '/media' }}"
     $mediaNode.credentials.httpHeaderAuth = [pscustomobject]@{ id = 'CONFIGURE_IN_N8N'; name = 'Nexus FastAPI Service' }
   }
 }
 
 $send = $workflow.nodes | Where-Object name -eq 'Send a text message'
 $send.name = 'Solicitar envio ao FastAPI'
-$send.parameters.url = "={{ `$env.NEXUS_API_INTERNAL_URL + '/internal/v1/messages' }}"
+$send.parameters.url = "$NexusApiBase/internal/v1/messages"
 $send.parameters.body = @'
 ={{ (() => { const d = $('Dados').item.json; const horario = $('Verificar horario comercial').isExecuted ? ($('Verificar horario comercial').item.json.respostaHorario || '') : ''; const validada = $('Validar resposta operacional').isExecuted ? ($('Validar resposta operacional').item.json.output || '') : ''; const resposta = horario || validada; if (!resposta) throw new Error('Resposta validada ausente'); return JSON.stringify({ execution_id: d.executionId, to: d.chatid, recipient_id: d.fromUserId || null, text: resposta, reply_to_message_id: d.replyToMessageId || null, idempotency_key: d.executionId + ':reply:v1' }); })() }}
 '@
@@ -195,7 +198,7 @@ foreach ($property in $workflow.connections.PSObject.Properties) {
 
 $typing = $workflow.nodes | Where-Object name -eq 'Start Typing'
 $typing.name = 'Indicador de digitação via FastAPI'
-$typing.parameters.url = "={{ `$env.NEXUS_API_INTERNAL_URL + '/internal/v1/typing' }}"
+$typing.parameters.url = "$NexusApiBase/internal/v1/typing"
 $typing.parameters | Add-Member -Force -NotePropertyName sendBody -NotePropertyValue $true
 $typing.parameters | Add-Member -Force -NotePropertyName contentType -NotePropertyValue 'raw'
 $typing.parameters | Add-Member -Force -NotePropertyName rawContentType -NotePropertyValue 'application/json'
@@ -214,7 +217,7 @@ foreach ($property in $workflow.connections.PSObject.Properties) {
 $callback = [pscustomobject]@{
   parameters = [pscustomobject]@{
     method = 'POST'
-    url = '={{ $env.NEXUS_API_INTERNAL_URL + ''/internal/v1/executions/'' + $(''Dados'').item.json.executionId + ''/result'' }}'
+    url = "={{ '$NexusApiBase/internal/v1/executions/' + `$('Dados').item.json.executionId + '/result' }}"
     authentication = 'genericCredentialType'
     genericAuthType = 'httpHeaderAuth'
     sendBody = $true
@@ -236,4 +239,14 @@ $workflow.connections | Add-Member -Force -NotePropertyName 'Salvar ID da mensag
 })
 
 $workflow | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $Destination -Encoding utf8
+
+$errorWorkflow = Get-Content -Raw -LiteralPath $ErrorDestination | ConvertFrom-Json -Depth 30
+$errorCallback = $errorWorkflow.nodes | Where-Object name -eq 'Reportar falha ao FastAPI'
+if (-not $errorCallback) {
+  throw "Nó 'Reportar falha ao FastAPI' ausente em $ErrorDestination"
+}
+$errorCallback.parameters.url = "={{ '$NexusApiBase/internal/v1/executions/by-n8n/' + `$json.execution.id + '/result' }}"
+$errorWorkflow | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $ErrorDestination -Encoding utf8
+
 Write-Output "Workflow gerado: $Destination"
+Write-Output "Workflow de erro gerado: $ErrorDestination"

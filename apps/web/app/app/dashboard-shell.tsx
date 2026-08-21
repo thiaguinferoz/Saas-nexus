@@ -259,16 +259,49 @@ type BillingState = {
   trial_days_remaining: number;
   access_allowed: boolean;
   cancel_at_period_end: boolean;
+  management_available: boolean;
 };
 
 function BillingPanel({ demoMode }: { demoMode: boolean }) {
-  const [billing, setBilling] = useState<BillingState>({ status: "pending", trial_ends_at: null, trial_days_remaining: 0, access_allowed: false, cancel_at_period_end: false });
+  const [billing, setBilling] = useState<BillingState | null>(null);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error" | "demo">(demoMode ? "demo" : "loading");
+  const [loadError, setLoadError] = useState("");
+  const [reloadToken, setReloadToken] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+
   useEffect(() => {
-    if (demoMode) return;
-    fetch(`${API_URL}/billing/subscription`, { credentials: "include" }).then(async (response) => response.ok ? response.json() : null).then((body) => body?.status && setBilling(body)).catch(() => null);
-  }, [demoMode]);
+    let cancelled = false;
+    if (demoMode) {
+      setBilling(null);
+      setLoadError("");
+      setLoadState("demo");
+      return;
+    }
+
+    setLoadError("");
+    setLoadState("loading");
+    fetch(`${API_URL}/billing/subscription`, { credentials: "include" })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null) as (BillingState & { detail?: string }) | null;
+        if (!response.ok) throw new Error(body?.detail || "Não foi possível consultar sua assinatura.");
+        return body;
+      })
+      .then((body) => {
+        if (cancelled) return;
+        setBilling(body?.status ? body : null);
+        setLoadState("ready");
+      })
+      .catch((reason) => {
+        if (cancelled) return;
+        setBilling(null);
+        setLoadError(reason instanceof Error ? reason.message : "Não foi possível consultar sua assinatura.");
+        setLoadState("error");
+      });
+
+    return () => { cancelled = true; };
+  }, [demoMode, reloadToken]);
+
   async function openBilling(endpoint: "checkout" | "portal") {
     setBusy(true); setMessage("");
     if (demoMode) { setTimeout(() => { setBusy(false); setMessage("O checkout abrirá aqui assim que as chaves do gateway forem configuradas."); }, 450); return; }
@@ -276,12 +309,169 @@ function BillingPanel({ demoMode }: { demoMode: boolean }) {
       const response = await fetch(`${API_URL}/billing/${endpoint}`, { method: "POST", credentials: "include", headers: { "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")) } });
       const body = await response.json();
       if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : "Não foi possível abrir a cobrança.");
-      window.location.href = body.url;
+      if (typeof body.url !== "string" || !body.url) throw new Error("O gateway não retornou um endereço de pagamento válido.");
+      window.location.assign(body.url);
     } catch (reason) { setMessage(reason instanceof Error ? reason.message : "Erro inesperado."); setBusy(false); }
   }
-  const paid = billing.status === "active";
-  const trialing = billing.status === "trialing" && billing.access_allowed;
-  const trialLabel = billing.trial_days_remaining === 1 ? "1 dia grátis restante" : `${billing.trial_days_remaining} dias grátis restantes`;
-  const badge = paid ? "Assinatura ativa" : trialing ? trialLabel : "Teste encerrado";
-  return <section className="billing-view"><div className="billing-plan-card"><div className="billing-orb"/><div className="billing-plan-head"><span><Sparkle weight="fill"/> PLANO NEXUS</span><strong className={paid || trialing ? "active" : "pending"}>{badge}</strong></div><h2>{trialing ? "Seu teste grátis está em andamento." : "Atendimento inteligente, pronto para escalar."}</h2><p>{trialing ? `Você pode usar todos os recursos por 3 dias. Depois desse período, assine o plano para manter a IA e as automações ativas.` : "Um workflow compartilhado, configurações exclusivas da sua empresa e toda a infraestrutura para operar no WhatsApp oficial."}</p>{trialing && billing.trial_ends_at && <div className="trial-deadline"><Clock weight="duotone"/><span><strong>Teste válido até</strong>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short" }).format(new Date(billing.trial_ends_at))}</span></div>}<div className="plan-features"><span><Check weight="bold"/> Painel e configurações da IA</span><span><Check weight="bold"/> Workflow padrão multi-tenant</span><span><Check weight="bold"/> Conexão oficial com a YCloud</span><span><Check weight="bold"/> Monitoramento e atualizações</span></div><button className="button" onClick={() => openBilling(paid ? "portal" : "checkout")} disabled={busy}>{busy ? "Abrindo..." : paid ? "Gerenciar assinatura" : trialing ? "Assinar agora e continuar" : "Assinar plano"}<CaretRight/></button>{message && <small className="billing-message">{message}</small>}</div><aside className="billing-side"><div className="billing-status-card"><span>SUA JORNADA</span><ol><li className="done"><i><Check/></i><div><strong>E-mail confirmado</strong><small>Conta e empresa verificadas</small></div></li><li className={trialing || paid ? "done" : ""}><i>{trialing || paid ? <Check/> : "2"}</i><div><strong>3 dias grátis</strong><small>{trialing ? trialLabel : paid ? "Período inicial concluído" : "Seu período de teste terminou"}</small></div></li><li className={paid ? "done" : "current"}><i>{paid ? <Check/> : "3"}</i><div><strong>Assinatura mensal</strong><small>{paid ? "Pagamento confirmado" : "Necessária para continuar após o teste"}</small></div></li><li><i>4</i><div><strong>WhatsApp e ativação</strong><small>Conecte seu número oficial pela YCloud</small></div></li></ol></div><div className="billing-security"><CreditCard weight="duotone"/><span><strong>Pagamento protegido</strong>Os dados financeiros são processados diretamente pelo gateway.</span></div></aside></section>;
+
+  const status = billing?.status ?? "none";
+  const paid = loadState === "ready" && status === "active";
+  const trialing = loadState === "ready" && status === "trialing" && Boolean(billing?.access_allowed);
+  const trialEndTimestamp = billing?.trial_ends_at ? Date.parse(billing.trial_ends_at) : Number.NaN;
+  const endedTrialStoredAsIncomplete = status === "incomplete" && Number.isFinite(trialEndTimestamp) && trialEndTimestamp <= Date.now();
+  const expiredTrial = loadState === "ready" && !billing?.access_allowed && (status === "trialing" || endedTrialStoredAsIncomplete);
+  const paymentIssue = status === "past_due" || status === "unpaid";
+  const cancelScheduled = loadState === "ready" && Boolean(billing?.cancel_at_period_end);
+  const managementAvailable = loadState === "ready" && Boolean(billing?.management_available);
+  const trialDays = billing?.trial_days_remaining ?? 0;
+  const trialLabel = trialDays === 1 ? "1 dia grátis restante" : `${trialDays} dias grátis restantes`;
+
+  let badge = "Plano não assinado";
+  let headline = "Assinatura mensal com checkout seguro.";
+  let description = "Confira o valor e as condições vigentes no checkout antes de confirmar o pagamento.";
+  let actionLabel = "Assinar plano";
+  let actionEndpoint: "checkout" | "portal" = "checkout";
+
+  if (loadState === "loading") {
+    badge = "Consultando plano";
+    headline = "Consultando sua assinatura.";
+    description = "Estamos confirmando o período gratuito e a situação de pagamento da sua conta.";
+    actionLabel = "Consultando...";
+  } else if (loadState === "error") {
+    badge = "Status indisponível";
+    headline = "Não foi possível consultar seu plano.";
+    description = `${loadError} Nenhuma situação de teste ou cobrança foi presumida.`;
+    actionLabel = "Tentar novamente";
+  } else if (loadState === "demo") {
+    badge = "Modo de demonstração";
+    headline = "Assinatura mensal com checkout seguro.";
+    description = "Na conta ativa, esta área confirma o teste gratuito e abre o checkout do gateway sem expor seus dados financeiros à Nexus.";
+    actionLabel = "Conhecer o checkout";
+  } else if (paid) {
+    badge = cancelScheduled ? "Cancelamento agendado" : "Assinatura ativa";
+    headline = cancelScheduled ? "Sua assinatura continua ativa por enquanto." : "Sua assinatura mensal está ativa.";
+    description = cancelScheduled
+      ? "O acesso permanece ativo até o encerramento do período atual. Gerencie a assinatura no portal seguro do gateway."
+      : "Seu pagamento está confirmado. Você pode gerenciar a assinatura no portal seguro do gateway.";
+    actionLabel = "Gerenciar assinatura";
+    actionEndpoint = "portal";
+  } else if (trialing) {
+    badge = managementAvailable ? "Assinatura configurada" : trialLabel;
+    headline = managementAvailable ? "Sua assinatura já está configurada." : "Seu teste grátis está em andamento.";
+    description = managementAvailable
+      ? "Seu teste grátis continua ativo, e a primeira cobrança será feita após o término do teste conforme as condições confirmadas no checkout."
+      : "Você pode usar todos os recursos por 3 dias. Assine o plano mensal para manter a IA e as automações ativas depois desse período.";
+    actionLabel = managementAvailable ? "Gerenciar assinatura" : "Assinar agora e continuar";
+    actionEndpoint = managementAvailable ? "portal" : "checkout";
+  } else if (expiredTrial) {
+    badge = "Teste encerrado";
+    headline = "Seu período gratuito terminou.";
+    description = managementAvailable
+      ? "Abra o portal seguro para consultar a assinatura e as opções disponíveis."
+      : "Assine o plano mensal pelo checkout seguro para reativar a IA e as automações.";
+  } else if (status === "past_due") {
+    badge = "Pagamento pendente";
+    headline = "Regularize sua assinatura mensal.";
+    description = "Abra o portal seguro do gateway para conferir a pendência e atualizar a forma de pagamento.";
+    actionLabel = "Regularizar pagamento";
+    actionEndpoint = "portal";
+  } else if (status === "unpaid") {
+    badge = "Pagamento não confirmado";
+    headline = "Atualize os dados da assinatura.";
+    description = "Abra o portal seguro do gateway para revisar a cobrança e a forma de pagamento.";
+    actionLabel = "Revisar pagamento";
+    actionEndpoint = "portal";
+  } else if (status === "canceled") {
+    badge = "Assinatura cancelada";
+    headline = "Assine novamente quando quiser continuar.";
+    description = managementAvailable
+      ? "Abra o portal seguro para consultar a assinatura e as opções disponíveis."
+      : "Uma nova assinatura mensal pode ser iniciada pelo checkout seguro. Confira o valor e as condições antes de confirmar.";
+    actionLabel = managementAvailable ? "Gerenciar cobrança" : "Assinar novamente";
+  } else if (status === "incomplete") {
+    badge = "Checkout não concluído";
+    headline = "Conclua sua assinatura mensal.";
+    description = managementAvailable
+      ? "Abra o portal seguro para consultar a assinatura e as opções disponíveis."
+      : "Inicie um novo checkout seguro e revise o valor e as condições antes da confirmação.";
+    actionLabel = managementAvailable ? "Gerenciar cobrança" : "Continuar assinatura";
+  } else if (status !== "none" && status !== "pending") {
+    badge = "Situação a confirmar";
+    headline = "Confira sua assinatura no checkout seguro.";
+  }
+
+  const trialStepDone = trialing || expiredTrial || paid || paymentIssue || status === "canceled";
+  const trialStepDetail = loadState === "loading"
+    ? "Consultando período gratuito..."
+    : loadState === "error"
+      ? "Situação temporariamente indisponível"
+      : loadState === "demo"
+        ? "Exibido na conta ativa"
+        : trialing
+          ? trialLabel
+          : paid || paymentIssue || status === "canceled"
+            ? "Período inicial concluído"
+            : expiredTrial
+              ? "Período gratuito encerrado"
+              : "Nenhum período ativo encontrado";
+  const subscriptionStepDetail = loadState === "loading"
+    ? "Consultando assinatura..."
+    : loadState === "error"
+      ? "Situação temporariamente indisponível"
+      : trialing && managementAvailable
+        ? "Configurada; primeira cobrança após o teste"
+        : paid
+        ? cancelScheduled ? "Ativa; cancelamento agendado" : "Pagamento confirmado"
+        : status === "past_due"
+          ? "Pagamento pendente"
+          : status === "unpaid"
+            ? "Pagamento não confirmado"
+            : status === "canceled"
+              ? "Cancelada; você pode assinar novamente"
+              : "Contratação pelo checkout seguro";
+
+  if (managementAvailable) {
+    if (actionEndpoint === "checkout") actionLabel = "Gerenciar cobrança";
+    actionEndpoint = "portal";
+  }
+
+  function handlePrimaryAction() {
+    if (loadState === "error") {
+      setMessage("");
+      setReloadToken((current) => current + 1);
+      return;
+    }
+    void openBilling(actionEndpoint);
+  }
+
+  return (
+    <section className="billing-view">
+      <div className="billing-plan-card">
+        <div className="billing-orb"/>
+        <div className="billing-plan-head">
+          <span><Sparkle weight="fill"/> PLANO NEXUS</span>
+          <strong className={paid || trialing ? "active" : "pending"}>{badge}</strong>
+        </div>
+        <h2>{headline}</h2>
+        <p>{description}</p>
+        {trialing && billing?.trial_ends_at && <div className="trial-deadline"><Clock weight="duotone"/><span><strong>Teste válido até</strong>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeStyle: "short" }).format(new Date(billing.trial_ends_at))}</span></div>}
+        {cancelScheduled && <div className="billing-account-notice"><Clock weight="duotone"/><span><strong>Cancelamento agendado</strong>{paid || trialing ? "O acesso permanece ativo até o fim do período atual." : "O gateway informa encerramento ao fim do período atual."}</span></div>}
+        <div className="plan-features"><span><Check weight="bold"/> Painel e configurações da IA</span><span><Check weight="bold"/> Workflow padrão multi-tenant</span><span><Check weight="bold"/> Conexão oficial com a YCloud</span><span><Check weight="bold"/> Monitoramento e atualizações</span></div>
+        <button className="button" onClick={handlePrimaryAction} disabled={busy || loadState === "loading"}>{busy ? "Abrindo..." : actionLabel}<CaretRight/></button>
+        {message && <small className="billing-message">{message}</small>}
+      </div>
+      <aside className="billing-side">
+        <div className="billing-status-card">
+          <span>SUA JORNADA</span>
+          <ol>
+            <li className="done"><i><Check/></i><div><strong>E-mail confirmado</strong><small>Conta e empresa verificadas</small></div></li>
+            <li className={trialStepDone ? "done" : ""}><i>{trialStepDone ? <Check/> : "2"}</i><div><strong>3 dias grátis</strong><small>{trialStepDetail}</small></div></li>
+            <li className={paid || managementAvailable ? "done" : loadState === "ready" || loadState === "demo" ? "current" : ""}><i>{paid || managementAvailable ? <Check/> : "3"}</i><div><strong>Assinatura mensal</strong><small>{subscriptionStepDetail}</small></div></li>
+            <li><i>4</i><div><strong>WhatsApp e ativação</strong><small>Conecte seu número oficial pela YCloud</small></div></li>
+          </ol>
+        </div>
+        <div className="billing-security"><CreditCard weight="duotone"/><span><strong>Checkout seguro</strong>O valor e as condições aparecem antes da confirmação; os dados financeiros são processados pelo gateway.</span></div>
+      </aside>
+    </section>
+  );
 }

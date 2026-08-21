@@ -22,6 +22,8 @@ def stream_for_event(event_type: str) -> str:
         return stream_name("automation")
     if event_type == "whatsapp.message.send.requested":
         return stream_name("outbound")
+    if event_type == "support.ticket.created":
+        return stream_name("support")
     return stream_name("provisioning")
 
 

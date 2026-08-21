@@ -1,14 +1,11 @@
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 
-from app.config import get_settings
 from app.dependencies import CsrfGuard, CurrentTenant, CurrentUser, DbSession
-from app.email import EmailDeliveryError, TransactionalEmailService
 from app.models import OutboxEvent, SupportTicket, SupportTicketCategory, SupportTicketPriority
 from app.schemas import SupportTicketCreate, SupportTicketRead
 
 router = APIRouter(prefix="/support", tags=["support"])
-settings = get_settings()
 
 
 @router.get("/tickets", response_model=list[SupportTicketRead])
@@ -55,21 +52,4 @@ async def create_support_ticket(
     )
     await db.commit()
     await db.refresh(ticket)
-    if settings.support_email:
-        try:
-            await TransactionalEmailService().send_support_ticket(
-                to=settings.support_email,
-                requester_email=user.email,
-                requester_name=user.full_name,
-                company_name=tenant.name,
-                ticket_id=ticket.id,
-                category=ticket.category.value,
-                priority=ticket.priority.value,
-                subject=ticket.subject,
-                message=ticket.message,
-                preferred_channel=ticket.preferred_channel,
-                contact_value=ticket.contact_value,
-            )
-        except EmailDeliveryError:
-            pass
     return SupportTicketRead.model_validate(ticket)
