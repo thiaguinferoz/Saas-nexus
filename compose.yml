@@ -162,13 +162,13 @@ services:
         condition: service_healthy
     networks: [internal]
 
-  provisioning-worker:
+    provisioning-worker:
     image: nexus-saas-stack-api:latest
     pull_policy: never
     restart: unless-stopped
     command: ["python", "-m", "app.workers.provisioning_worker"]
     env_file: .env
-     volumes:
+    volumes:
       - n8n_data:/tmp/n8n_data
     depends_on:
       migrate:
@@ -178,7 +178,7 @@ services:
       redis:
         condition: service_healthy
     networks: [internal]
-
+    
   support-worker:
     image: nexus-saas-stack-api:latest
     pull_policy: never
