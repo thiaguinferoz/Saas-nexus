@@ -114,6 +114,8 @@ function CatalogPanel({ demoMode }: { demoMode: boolean }) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [newItem, setNewItem] = useState({ name: "", category: "", price: "", sku: "" });
   const [items, setItems] = useState<CatalogItemSummary[]>([
     { name: "Consultoria inicial", category: "Serviços", price: "R$ 180,00", status: "Disponível" },
     { name: "Instalação padrão", category: "Serviços", price: "R$ 350,00", status: "Disponível" },
@@ -144,13 +146,36 @@ function CatalogPanel({ demoMode }: { demoMode: boolean }) {
       const response = await fetch(`${API_URL}/catalog/import`, { method: "POST", credentials: "include", headers: { "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")) }, body: data });
       const body = await response.json();
       if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : body.detail?.message || "Não foi possível importar a planilha.");
-      setItems((body.items as Array<{ id: string; name: string; category?: string; price?: string; currency: string; is_active: boolean }>).map(summarize));
+      const importedItems = (body.items as Array<{ id: string; name: string; category?: string; price?: string; currency: string; is_active: boolean }>).map(summarize);
+      setItems((current) => {
+        const importedIds = new Set(importedItems.map((item) => item.id));
+        return [...importedItems, ...current.filter((item) => !item.id || !importedIds.has(item.id))];
+      });
       setFeedback(`${body.imported} item(ns) importado(s)${body.updated ? ` e ${body.updated} atualizado(s)` : ""}.${body.skipped ? ` ${body.skipped} linha(s) foram ignoradas.` : ""}`);
       setFile(null);
     } catch (reason) { setFeedback(reason instanceof Error ? reason.message : "Não foi possível importar a planilha."); }
     finally { setBusy(false); }
   }
-  return <section className="personalization-view"><div className="automation-explainer"><span><Lightning weight="fill"/></span><div><strong>Catálogo padrão para qualquer tipo de negócio</strong><p>Envie uma planilha e a Nexus transforma produtos, serviços e valores em dados estruturados e isolados por empresa.</p></div><b>AUTOMÁTICO</b></div><div className="personalization-grid catalog-layout"><article className="module-card import-card"><div className="module-card-head"><span><UploadSimple/></span><div><h2>Importar catálogo</h2><p>CSV ou Excel com produtos, serviços e valores.</p></div></div><label className={`upload-zone ${file ? "has-file" : ""}`}><input type="file" accept=".csv,.xlsx" onChange={(event) => { setFile(event.target.files?.[0] ?? null); setFeedback(""); }}/><FileCsv weight="duotone"/><strong>{file?.name || "Arraste a planilha ou selecione um arquivo"}</strong><small>{file ? "Arquivo selecionado e pronto para importar." : "Até 20 MB • CSV ou XLSX"}</small></label><button className="module-primary-button" disabled={!file || busy} onClick={importCatalog}><Sparkle weight="fill"/> {busy ? "Importando..." : "Extrair e publicar itens"}</button>{feedback && <div className="mapping-preview"><small>{feedback}</small></div>}<small>Colunas reconhecidas: nome/produto/serviço, preço/valor, categoria/tipo e SKU/código.</small></article><article className="module-card catalog-card"><div className="module-card-head"><span><FileCsv/></span><div><h2>Catálogo publicado</h2><p>{demoMode ? "Exemplo genérico da estrutura padrão." : `${items.length} itens disponíveis para a IA.`}</p></div><button className="ghost-action">+ Novo item</button></div><div className="catalog-table"><div className="catalog-table-head"><span>Item</span><span>Categoria</span><span>Valor</span><span>Status</span></div>{items.length ? items.map((item) => <div className="catalog-table-row" key={item.id || item.name}><strong>{item.name}</strong><span>{item.category}</span><b>{item.price}</b><em>{item.status}</em></div>) : <div className="catalog-empty">Seu catálogo ainda está vazio. Importe uma planilha ou crie o primeiro item.</div>}</div><div className="structured-note"><LockKey/><span><strong>Valores sempre exatos</strong>Preços são consultados diretamente no catálogo estruturado, e não na memória do modelo.</span></div></article></div></section>;
+  async function createManualItem(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true); setFeedback("");
+    try {
+      const payload = { name: newItem.name.trim(), category: newItem.category.trim() || null, price: newItem.price || null, sku: newItem.sku.trim() || null, currency: "BRL", is_active: true };
+      if (demoMode) {
+        setItems((current) => [summarize({ id: `demo-${Date.now()}`, ...payload, category: payload.category || undefined, price: payload.price || undefined, currency: "BRL", is_active: true }), ...current]);
+      } else {
+        const response = await fetch(`${API_URL}/catalog/items`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")) }, body: JSON.stringify(payload) });
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(body?.detail || "Não foi possível criar o item.");
+        setItems((current) => [summarize(body), ...current]);
+      }
+      setNewItem({ name: "", category: "", price: "", sku: "" });
+      setCreating(false);
+      setFeedback("Item criado e publicado no catálogo.");
+    } catch (reason) { setFeedback(reason instanceof Error ? reason.message : "Não foi possível criar o item."); }
+    finally { setBusy(false); }
+  }
+  return <section className="personalization-view"><div className="automation-explainer"><span><Lightning weight="fill"/></span><div><strong>Catálogo padrão para qualquer tipo de negócio</strong><p>Envie uma planilha e a Nexus transforma produtos, serviços e valores em dados estruturados e isolados por empresa.</p></div><b>AUTOMÁTICO</b></div><div className="personalization-grid catalog-layout"><article className="module-card import-card"><div className="module-card-head"><span><UploadSimple/></span><div><h2>Importar catálogo</h2><p>CSV ou Excel com produtos, serviços e valores.</p></div></div><label className={`upload-zone ${file ? "has-file" : ""}`}><input type="file" accept=".csv,.xlsx" onChange={(event) => { setFile(event.target.files?.[0] ?? null); setFeedback(""); }}/><FileCsv weight="duotone"/><strong>{file?.name || "Arraste a planilha ou selecione um arquivo"}</strong><small>{file ? "Arquivo selecionado e pronto para importar." : "Até 20 MB • CSV ou XLSX"}</small></label><button className="module-primary-button" disabled={!file || busy} onClick={importCatalog}><Sparkle weight="fill"/> {busy ? "Importando..." : "Extrair e publicar itens"}</button>{feedback && <div className="mapping-preview"><small>{feedback}</small></div>}<small>Colunas reconhecidas: nome/produto/serviço, preço/valor, categoria/tipo e SKU/código.</small></article><article className="module-card catalog-card"><div className="module-card-head"><span><FileCsv/></span><div><h2>Catálogo publicado</h2><p>{demoMode ? "Exemplo genérico da estrutura padrão." : `${items.length} itens disponíveis para a IA.`}</p></div><button className="ghost-action" type="button" onClick={() => setCreating((value) => !value)}>{creating ? "Cancelar" : "+ Novo item"}</button></div>{creating && <form className="catalog-editor" onSubmit={createManualItem}><label>Nome<input required minLength={2} maxLength={200} value={newItem.name} onChange={(event) => setNewItem({ ...newItem, name: event.target.value })} placeholder="Produto ou serviço"/></label><label>Categoria<input maxLength={120} value={newItem.category} onChange={(event) => setNewItem({ ...newItem, category: event.target.value })} placeholder="Ex.: Serviços"/></label><label>Preço em reais<input inputMode="decimal" pattern="[0-9]+([,.][0-9]{1,2})?" value={newItem.price} onChange={(event) => setNewItem({ ...newItem, price: event.target.value.replace(",", ".") })} placeholder="0,00"/></label><label>SKU/código<input maxLength={120} value={newItem.sku} onChange={(event) => setNewItem({ ...newItem, sku: event.target.value })} placeholder="Opcional"/></label><button className="module-primary-button" disabled={busy}>{busy ? "Salvando..." : "Criar item"}</button></form>}<div className="catalog-table"><div className="catalog-table-head"><span>Item</span><span>Categoria</span><span>Valor</span><span>Status</span></div>{items.length ? items.map((item) => <div className="catalog-table-row" key={item.id || item.name}><strong>{item.name}</strong><span>{item.category}</span><b>{item.price}</b><em>{item.status}</em></div>) : <div className="catalog-empty">Seu catálogo ainda está vazio. Importe uma planilha ou crie o primeiro item.</div>}</div><div className="structured-note"><LockKey/><span><strong>Valores sempre exatos</strong>Preços são consultados diretamente no catálogo estruturado, e não na memória do modelo.</span></div></article></div></section>;
 }
 
 function KnowledgePanel() {

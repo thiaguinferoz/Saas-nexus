@@ -416,6 +416,11 @@
 .client-portal .module-card-head h2{margin:0;color:#242d4d;font-size:16px}
 .client-portal .module-card-head p{margin:0;color:#8a92a8;font-size:10px;line-height:1.45}
 .client-portal .ghost-action{min-height:34px;padding:0 12px;border:1px solid #dedfec;border-radius:10px;color:#6241cd;background:#f8f7ff;font:700 10px var(--font-manrope);cursor:pointer}
+.client-portal .catalog-editor{margin:14px 0;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:11px;border:1px solid #e3def5;border-radius:13px;background:#faf9ff}
+.client-portal .catalog-editor label{display:grid;gap:6px;color:#47506a;font-size:10px;font-weight:750}
+.client-portal .catalog-editor input{min-width:0;height:40px;padding:0 11px;border:1px solid #dfe2ec;border-radius:9px;outline:0;background:#fff;color:#333c58;font:11px var(--font-inter)}
+.client-portal .catalog-editor input:focus{border-color:#7653d5;box-shadow:0 0 0 3px #eeeaff}
+.client-portal .catalog-editor .module-primary-button{grid-column:1/-1;margin-top:2px}
 .client-portal .upload-zone{min-height:174px;margin-top:20px;padding:25px;display:flex!important;align-items:center;justify-content:center;gap:7px!important;text-align:center;border:1.5px dashed #cfd3e2;border-radius:17px;color:#555f7c;background:#fafbfe;cursor:pointer;transition:.18s}
 .client-portal .upload-zone:hover,.client-portal .upload-zone.has-file{border-color:#7250dc;background:#f5f2ff}
 .client-portal .upload-zone input{display:none}
