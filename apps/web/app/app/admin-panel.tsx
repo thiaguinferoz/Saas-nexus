@@ -5,6 +5,8 @@ import {
   Buildings,
   ChatCircleText,
   CheckCircle,
+  CaretDown,
+  CaretUp,
   ClockCountdown,
   CreditCard,
   MagnifyingGlass,
@@ -43,6 +45,7 @@ type AdminTicket = {
   priority: string;
   status: string;
   subject: string;
+  message: string;
   preferred_channel: string;
   contact_value: string | null;
   created_at: string;
@@ -102,6 +105,7 @@ export function AdminPanel() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [updatingTicket, setUpdatingTicket] = useState("");
+  const [openedTicket, setOpenedTicket] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -237,10 +241,30 @@ export function AdminPanel() {
           <div className="admin-section-head compact"><div><span><ClockCountdown weight="duotone" /></span><div><h2>Suporte recente</h2><p>Priorize solicitações da plataforma.</p></div></div></div>
           <div className="admin-ticket-list">
             {data.support_tickets.slice(0, 8).map((ticket) => (
-              <article key={ticket.id}>
-                <header><span>{ticket.tenant_name}</span><b className={ticket.priority === "high" ? "high" : ""}>{ticket.priority === "high" ? "ALTA" : "NORMAL"}</b></header>
-                <h3>{ticket.subject}</h3>
+              <article key={ticket.id} className={openedTicket === ticket.id ? "open" : ""}>
+                <button
+                  type="button"
+                  className="admin-ticket-open"
+                  aria-expanded={openedTicket === ticket.id}
+                  onClick={() => setOpenedTicket((current) => current === ticket.id ? "" : ticket.id)}
+                >
+                  <span>
+                    <header><span>{ticket.tenant_name}</span><b className={ticket.priority === "high" ? "high" : ""}>{ticket.priority === "high" ? "ALTA" : "NORMAL"}</b></header>
+                    <h3>{ticket.subject}</h3>
+                  </span>
+                  {openedTicket === ticket.id ? <CaretUp /> : <CaretDown />}
+                </button>
                 <p>{formatDate(ticket.created_at)} · {ticket.preferred_channel}</p>
+                {openedTicket === ticket.id && (
+                  <div className="admin-ticket-details">
+                    <strong>Mensagem</strong>
+                    <p>{ticket.message}</p>
+                    <dl>
+                      <div><dt>Canal de retorno</dt><dd>{ticket.preferred_channel}</dd></div>
+                      <div><dt>Contato</dt><dd>{ticket.contact_value || "Pela plataforma"}</dd></div>
+                    </dl>
+                  </div>
+                )}
                 <label>
                   <CheckCircle />
                   <select value={ticket.status} disabled={updatingTicket === ticket.id} onChange={(event) => void updateTicket(ticket, event.target.value)}>

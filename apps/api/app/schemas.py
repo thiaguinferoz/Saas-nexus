@@ -258,6 +258,7 @@ class AdminSupportTicketRead(BaseModel):
     priority: SupportTicketPriority
     status: SupportTicketStatus
     subject: str
+    message: str
     preferred_channel: str
     contact_value: str | None = None
     created_at: datetime
