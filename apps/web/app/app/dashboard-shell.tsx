@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowSquareOut, BellSimple, BookOpen, Buildings, CalendarDots, CaretRight, ChartLineUp, ChatCircleDots, Check, Clock, CreditCard, FileCsv, Flask, Gear, Lightning, LinkSimple, ListChecks, LockKey, PaperPlaneTilt, RocketLaunch, ShieldCheck, SignOut, Sparkle, Target, UploadSimple, UserPlus, WhatsappLogo } from "@phosphor-icons/react";
+import { ArrowSquareOut, BellSimple, BookOpen, Buildings, CalendarDots, CaretRight, ChartLineUp, ChatCircleDots, Check, Clock, CreditCard, FileCsv, Flask, FloppyDisk, Gear, Lightning, LinkSimple, ListChecks, LockKey, PaperPlaneTilt, RocketLaunch, ShieldCheck, SignOut, Sparkle, Target, Trash, UploadSimple, UserPlus, WhatsappLogo } from "@phosphor-icons/react";
 import { NexusLogo } from "../shared/nexus-logo";
 import { AdminPanel } from "./admin-panel";
 
@@ -110,9 +110,67 @@ function Overview({ progress, completed, goTo }: { progress: number; completed: 
   return <section className="overview-reference"><div className="overview-main"><div className="metric-grid">{metrics.map(({ icon: Icon, label, value, detail, featured }) => <article className={featured ? "featured" : ""} key={label}><span><Icon weight="duotone"/>{label}</span><strong>{value}</strong><small>{detail}</small></article>)}</div><section className="quick-actions-card"><div className="overview-section-title"><span><Lightning weight="fill"/></span><div><h2>Ações rápidas</h2><p>Continue sua configuração sem procurar pelo menu.</p></div></div><div className="quick-actions"><button className="primary" onClick={() => goTo("whatsapp")}><WhatsappLogo weight="fill"/><span><strong>Conectar WhatsApp</strong><small>Vincule seu número oficial</small></span><CaretRight/></button><button onClick={() => goTo("assistant")}><Sparkle weight="fill"/><span><strong>Configurar a IA</strong><small>Defina tom e instruções</small></span><CaretRight/></button><button onClick={() => goTo("hours")}><CalendarDots/><span><strong>Ajustar horários</strong><small>Informe quando sua equipe atende</small></span><CaretRight/></button></div></section></div><aside className="overview-side"><section className="setup-compact"><div className="setup-compact-head"><div><span>ATIVAÇÃO</span><h2>Prepare sua operação</h2></div><strong>{progress}%</strong></div><div className="progress"><i style={{ width: `${progress}%` }}/></div><div className="setup-compact-list">{items.map(({ icon: Icon, title, text, tab }, index) => <button key={title} onClick={() => goTo(tab)} className={completed[index] ? "done" : ""}><i>{completed[index] ? <Check weight="bold"/> : <Icon/>}</i><span><strong>{title}</strong><small>{text}</small></span><CaretRight/></button>)}</div></section><section className="activity-card"><div className="overview-section-title"><span><Clock/></span><div><h2>Atividade recente</h2><p>Atualizações da sua conta</p></div></div><ol><li><i className="purple"><Sparkle weight="fill"/></i><span><strong>Conta Nexus criada</strong><small>Seu ambiente está pronto</small></span><time>Hoje</time></li><li><i className="cyan"><Gear/></i><span><strong>Configuração iniciada</strong><small>{progress}% da ativação concluída</small></span><time>Agora</time></li></ol></section></aside></section>;
 }
 
-type CatalogItemSummary = { id?: string; name: string; category: string; price: string; status: string };
+type CatalogItemSummary = { id?: string; name: string; category: string; price: string; status: string; source?: string };
 
 function CatalogPanel({ demoMode }: { demoMode: boolean }) {
+  return <div className="catalog-page"><CatalogPanelBody demoMode={demoMode}/><CatalogManagementPanel demoMode={demoMode}/></div>;
+}
+
+function CatalogManagementPanel({ demoMode }: { demoMode: boolean }) {
+  const [items, setItems] = useState<CatalogItemSummary[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  async function loadItems() {
+    if (demoMode) return;
+    const response = await fetch(`${API_URL}/catalog/items`, { credentials: "include" });
+    if (!response.ok) return;
+    const body = await response.json() as Array<{ id: string; name: string; category?: string; price?: string; currency: string; is_active: boolean; source: string }>;
+    setItems(body.map((item) => ({ id: item.id, name: item.name, category: item.category || "Sem categoria", price: item.price == null ? "Sob consulta" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: item.currency || "BRL" }).format(Number(item.price)), status: item.is_active ? "Disponível" : "Inativo", source: item.source })));
+  }
+  useEffect(() => {
+    void loadItems();
+    const reload = () => { void loadItems(); };
+    window.addEventListener("catalog-changed", reload);
+    return () => window.removeEventListener("catalog-changed", reload);
+  }, [demoMode]);
+  async function removeItem(item: CatalogItemSummary) {
+    if (!item.id || !window.confirm(`Remover “${item.name}” do catálogo?`)) return;
+    setBusy(true); setFeedback("");
+    try {
+      const response = await fetch(`${API_URL}/catalog/items/${item.id}`, { method: "DELETE", credentials: "include", headers: { "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")) } });
+      if (!response.ok) throw new Error("Não foi possível remover o item.");
+      setItems((current) => current.filter((currentItem) => currentItem.id !== item.id));
+      setFeedback("Item removido do catálogo.");
+    } catch (reason) { setFeedback(reason instanceof Error ? reason.message : "Não foi possível remover o item."); }
+    finally { setBusy(false); }
+  }
+  async function removeSpreadsheet() {
+    const count = items.filter((item) => item.source === "import").length;
+    if (!count || !window.confirm(`Apagar os ${count} itens importados? Produtos criados manualmente serão preservados.`)) return;
+    setBusy(true); setFeedback("");
+    try {
+      const response = await fetch(`${API_URL}/catalog/imported-items`, { method: "DELETE", credentials: "include", headers: { "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")) } });
+      if (!response.ok) throw new Error("Não foi possível apagar a planilha.");
+      setItems((current) => current.filter((item) => item.source !== "import"));
+      setFeedback("Planilha apagada. Itens manuais foram preservados.");
+    } catch (reason) { setFeedback(reason instanceof Error ? reason.message : "Não foi possível apagar a planilha."); }
+    finally { setBusy(false); }
+  }
+  async function saveCatalog() {
+    setBusy(true); setFeedback("");
+    try {
+      const response = await fetch(`${API_URL}/catalog/items/publish`, { method: "POST", credentials: "include", headers: { "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")) } });
+      if (!response.ok) throw new Error("Não foi possível salvar o catálogo.");
+      setItems((current) => current.map((item) => ({ ...item, status: "Disponível" })));
+      setFeedback("Catálogo salvo e publicado para a IA.");
+    } catch (reason) { setFeedback(reason instanceof Error ? reason.message : "Não foi possível salvar o catálogo."); }
+    finally { setBusy(false); }
+  }
+  if (demoMode) return null;
+  return <section className="module-card catalog-management-card"><div className="module-card-head"><span><FileCsv/></span><div><h2>Gerenciar catálogo</h2><p>Salve, remova produtos ou apague os itens importados da planilha.</p></div><div className="catalog-actions"><button className="ghost-action" disabled={busy || !items.length} onClick={saveCatalog}><FloppyDisk/> Salvar catálogo</button><button className="ghost-action danger-action" disabled={busy || !items.some((item) => item.source === "import")} onClick={removeSpreadsheet}><Trash/> Apagar planilha</button></div></div>{feedback && <div className="mapping-preview"><small>{feedback}</small></div>}<div className="catalog-table"><div className="catalog-table-head"><span>Item</span><span>Categoria</span><span>Valor</span><span>Status</span><span>Ações</span></div>{items.length ? items.map((item) => <div className="catalog-table-row" key={item.id}><strong>{item.name}</strong><span>{item.category}</span><b>{item.price}</b><em>{item.status}</em><button className="catalog-delete-button" type="button" aria-label={`Remover ${item.name}`} title="Remover item" disabled={busy} onClick={() => removeItem(item)}><Trash/></button></div>) : <div className="catalog-empty">Nenhum item publicado.</div>}</div></section>;
+}
+
+function CatalogPanelBody({ demoMode }: { demoMode: boolean }) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -129,18 +187,19 @@ function CatalogPanel({ demoMode }: { demoMode: boolean }) {
     if (demoMode) return;
     fetch(`${API_URL}/catalog/items`, { credentials: "include" })
       .then(async (response) => response.ok ? response.json() : [])
-      .then((body: Array<{ id: string; name: string; category?: string; price?: string; currency: string; is_active: boolean }>) => {
+      .then((body: Array<{ id: string; name: string; category?: string; price?: string; currency: string; is_active: boolean; source: string }>) => {
         setItems(body.map((item) => ({
           id: item.id,
           name: item.name,
           category: item.category || "Sem categoria",
           price: item.price == null ? "Sob consulta" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: item.currency || "BRL" }).format(Number(item.price)),
           status: item.is_active ? "Disponível" : "Inativo",
+          source: item.source,
         })));
       }).catch(() => null);
   }, [demoMode]);
-  function summarize(item: { id: string; name: string; category?: string; price?: string; currency: string; is_active: boolean }): CatalogItemSummary {
-    return { id: item.id, name: item.name, category: item.category || "Sem categoria", price: item.price == null ? "Sob consulta" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: item.currency || "BRL" }).format(Number(item.price)), status: item.is_active ? "Disponível" : "Inativo" };
+  function summarize(item: { id: string; name: string; category?: string; price?: string; currency: string; is_active: boolean; source?: string }): CatalogItemSummary {
+    return { id: item.id, name: item.name, category: item.category || "Sem categoria", price: item.price == null ? "Sob consulta" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: item.currency || "BRL" }).format(Number(item.price)), status: item.is_active ? "Disponível" : "Inativo", source: item.source };
   }
   async function importCatalog() {
     if (!file) return;
@@ -172,7 +231,7 @@ function CatalogPanel({ demoMode }: { demoMode: boolean }) {
         const details = Array.isArray(body.detail?.errors) ? ` ${body.detail.errors.slice(0, 3).join(" ")}` : "";
         throw new Error(`${detail || "Não foi possível importar a planilha."}${details}`);
       }
-      const importedItems = (body.items as Array<{ id: string; name: string; category?: string; price?: string; currency: string; is_active: boolean }>).map(summarize);
+      const importedItems = (body.items as Array<{ id: string; name: string; category?: string; price?: string; currency: string; is_active: boolean; source: string }>).map(summarize);
       setItems((current) => {
         const importedIds = new Set(importedItems.map((item) => item.id));
         return [...importedItems, ...current.filter((item) => !item.id || !importedIds.has(item.id))];
@@ -181,6 +240,7 @@ function CatalogPanel({ demoMode }: { demoMode: boolean }) {
       setFeedback(`${body.imported} item(ns) importado(s)${body.updated ? ` e ${body.updated} atualizado(s)` : ""}.${body.skipped ? ` ${body.skipped} linha(s) foram ignoradas.` : ""}${warnings}`);
       setFile(null);
       setMappingHeaders([]);
+      window.dispatchEvent(new Event("catalog-changed"));
     } catch (reason) { setFeedback(reason instanceof Error ? reason.message : "Não foi possível importar a planilha."); }
     finally { setBusy(false); }
   }
@@ -200,6 +260,7 @@ function CatalogPanel({ demoMode }: { demoMode: boolean }) {
       setNewItem({ name: "", category: "", price: "", sku: "" });
       setCreating(false);
       setFeedback("Item criado e publicado no catálogo.");
+      window.dispatchEvent(new Event("catalog-changed"));
     } catch (reason) { setFeedback(reason instanceof Error ? reason.message : "Não foi possível criar o item."); }
     finally { setBusy(false); }
   }

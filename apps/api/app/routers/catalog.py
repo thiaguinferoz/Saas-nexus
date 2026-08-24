@@ -6,8 +6,8 @@ import uuid
 from decimal import Decimal, InvalidOperation
 from numbers import Number
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
-from sqlalchemy import select
+from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, status
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 
 from app.dependencies import CsrfGuard, CurrentTenant, DbSession
@@ -318,6 +318,57 @@ async def create_catalog_item(
         raise HTTPException(status_code=409, detail="Já existe um item com este SKU") from exc
     await db.refresh(item)
     return CatalogItemRead.model_validate(item)
+
+
+@router.post("/items/publish")
+async def publish_catalog_items(
+    tenant: CurrentTenant,
+    db: DbSession,
+    _csrf: CsrfGuard,
+) -> dict[str, int]:
+    result = await db.execute(
+        update(CatalogItem)
+        .where(CatalogItem.tenant_id == tenant.id)
+        .values(is_active=True)
+    )
+    await db.commit()
+    return {"saved": result.rowcount or 0}
+
+
+@router.delete("/imported-items")
+async def delete_imported_catalog_items(
+    tenant: CurrentTenant,
+    db: DbSession,
+    _csrf: CsrfGuard,
+) -> dict[str, int]:
+    result = await db.execute(
+        delete(CatalogItem).where(
+            CatalogItem.tenant_id == tenant.id,
+            CatalogItem.source == "import",
+        )
+    )
+    await db.commit()
+    return {"deleted": result.rowcount or 0}
+
+
+@router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_catalog_item(
+    item_id: uuid.UUID,
+    tenant: CurrentTenant,
+    db: DbSession,
+    _csrf: CsrfGuard,
+) -> Response:
+    result = await db.execute(
+        delete(CatalogItem).where(
+            CatalogItem.id == item_id,
+            CatalogItem.tenant_id == tenant.id,
+        )
+    )
+    if not result.rowcount:
+        await db.rollback()
+        raise HTTPException(status_code=404, detail="Item não encontrado")
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.patch("/items/{item_id}", response_model=CatalogItemRead)
