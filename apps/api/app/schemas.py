@@ -69,11 +69,19 @@ class BusinessHoursDay(BaseModel):
     closes_at: str = Field(default="18:00", pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
+class GoalsSettings(BaseModel):
+    enabled: list[str] = Field(default_factory=lambda: ["questions", "leads", "quotes", "handoff"], max_length=20)
+    always_rules: str = Field(default="Confirmar os dados antes de concluir uma solicitação. Informar quando um valor estiver sujeito a avaliação.", max_length=4000)
+    never_rules: str = Field(default="Inventar preços, prometer prazos não cadastrados ou responder sobre assuntos que não pertencem à empresa.", max_length=4000)
+    handoff_conditions: list[str] = Field(default_factory=lambda: ["customer_requested", "complaint_or_cancellation", "unsafe_information"], max_length=20)
+
+
 class TenantSettingsPayload(BaseModel):
     company_name: str = Field(min_length=2, max_length=160)
     timezone: str = "America/Sao_Paulo"
     assistant: AssistantSettings = Field(default_factory=AssistantSettings)
     business_hours: dict[str, BusinessHoursDay] = Field(default_factory=dict)
+    goals: GoalsSettings = Field(default_factory=GoalsSettings)
 
 
 class SettingsRead(BaseModel):
