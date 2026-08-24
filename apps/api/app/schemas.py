@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models import OutboundMessageStatus, SubscriptionStatus, SupportTicketCategory, SupportTicketPriority, SupportTicketStatus, TenantStatus, WhatsAppConnectionStatus, WorkflowExecutionStatus
 
@@ -109,6 +109,18 @@ class WhatsAppOnboardingComplete(BaseModel):
     waba_id: str = Field(min_length=5, max_length=255)
     phone_number: str = Field(pattern=r"^\+[1-9]\d{7,14}$")
     phone_number_id: str | None = Field(default=None, max_length=255)
+
+    @field_validator("phone_number", mode="before")
+    @classmethod
+    def normalize_brazilian_phone_number(cls, value: object) -> str:
+        if not isinstance(value, str):
+            return value  # type: ignore[return-value]
+        digits = "".join(character for character in value if character.isdigit())
+        if digits.startswith("55") and len(digits) in {12, 13}:
+            digits = digits[2:]
+        if len(digits) in {10, 11}:
+            return f"+55{digits}"
+        return value
 
 
 class WhatsAppConnectionRead(BaseModel):

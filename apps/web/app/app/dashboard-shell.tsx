@@ -221,8 +221,8 @@ function WhatsAppPanel({ demoMode, onConnectionChange }: { demoMode: boolean; on
     fetch(`${API_URL}/whatsapp/connection`, { credentials: "include" }).then(async (response) => response.ok ? response.json() : null).then((body) => { setConnection(body); onConnectionChange(body?.status === "connected"); }).catch(() => null);
   }, [demoMode, onConnectionChange]);
 
-  async function finishOnboarding(session: EmbeddedSession, data: { waba_id: string; phone_number_id?: string }) {
-    const response = await fetch(`${API_URL}/whatsapp/onboarding/complete`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")) }, body: JSON.stringify({ state: session.state, waba_id: data.waba_id, phone_number_id: data.phone_number_id, phone_number: phone }) });
+  async function finishOnboarding(session: EmbeddedSession, data: { waba_id: string; phone_number_id?: string }, phoneNumber: string) {
+    const response = await fetch(`${API_URL}/whatsapp/onboarding/complete`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")) }, body: JSON.stringify({ state: session.state, waba_id: data.waba_id, phone_number_id: data.phone_number_id, phone_number: phoneNumber }) });
     const body = await response.json();
     if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : "Não foi possível concluir a conexão.");
     setConnection(body); onConnectionChange(true); setMessage(""); setBusy(false);
@@ -230,8 +230,11 @@ function WhatsAppPanel({ demoMode, onConnectionChange }: { demoMode: boolean; on
 
   async function connect() {
     setBusy(true); setMessage("");
-    if (demoMode) { setTimeout(() => { const demo = { waba_id: "demo", phone_number: phone || "+55 13 99999-0000", display_name: "Nexus Demonstração", quality_rating: "GREEN", status: "connected" }; setConnection(demo); onConnectionChange(true); setBusy(false); }, 700); return; }
-    if (!/^\+[1-9]\d{7,14}$/.test(phone)) { setMessage("Informe o número com país e DDD, por exemplo: +5513999990000."); setBusy(false); return; }
+    const digits = phone.replace(/\D/g, "");
+    const brazilianNumber = digits.startsWith("55") && [12, 13].includes(digits.length) ? digits.slice(2) : digits;
+    if (!/^\d{10,11}$/.test(brazilianNumber)) { setMessage("Informe o DDD e o número, por exemplo: 13 99999-0000."); setBusy(false); return; }
+    const phoneNumber = `+55${brazilianNumber}`;
+    if (demoMode) { setTimeout(() => { const demo = { waba_id: "demo", phone_number: phoneNumber, display_name: "Nexus Demonstração", quality_rating: "GREEN", status: "connected" }; setConnection(demo); onConnectionChange(true); setBusy(false); }, 700); return; }
     try {
       const response = await fetch(`${API_URL}/whatsapp/onboarding/session`, { method: "POST", credentials: "include", headers: { "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")) } });
       const session = await response.json() as EmbeddedSession & { detail?: string };
@@ -245,7 +248,7 @@ function WhatsAppPanel({ demoMode, onConnectionChange }: { demoMode: boolean; on
           const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
           if (data?.type === "WA_EMBEDDED_SIGNUP" && data?.event === "FINISH") {
             window.removeEventListener("message", receiveMessage);
-            finishOnboarding(session, { waba_id: data.data.waba_id, phone_number_id: data.data.phone_number_id }).catch((reason) => { setMessage(reason instanceof Error ? reason.message : "Erro inesperado."); setBusy(false); });
+            finishOnboarding(session, { waba_id: data.data.waba_id, phone_number_id: data.data.phone_number_id }, phoneNumber).catch((reason) => { setMessage(reason instanceof Error ? reason.message : "Erro inesperado."); setBusy(false); });
           }
         } catch { /* mensagens externas que não pertencem ao onboarding */ }
       };
@@ -261,7 +264,7 @@ function WhatsAppPanel({ demoMode, onConnectionChange }: { demoMode: boolean; on
   }, []);
 
   const connected = connection?.status === "connected";
-  return <section className="whatsapp-view"><div className="whatsapp-hero"><div className="whatsapp-orbit"><i/><i/><i/></div><div className="whatsapp-hero-copy"><span><WhatsappLogo weight="fill"/> CANAL OFICIAL</span><h2>{connected ? "WhatsApp conectado e pronto." : "Conecte seu número. A Nexus cuida do restante."}</h2><p>{connected ? "Seu canal está vinculado ao tenant correto e pode receber o workflow inteligente da Nexus." : "A autorização acontece no ambiente seguro da Meta. Você não precisa compartilhar senha, token ou acesso ao n8n."}</p>{connected ? <div className="connected-number"><i><WhatsappLogo weight="fill"/></i><span><small>{connection.display_name || "Sua empresa"}</small><strong>{connection.phone_number}</strong></span><b><Check weight="bold"/> CONECTADO</b></div> : <div className="connect-form"><label>Número que será conectado<input value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+5513999990000"/></label><button className="button whatsapp-button" onClick={connect} disabled={busy}>{busy ? "Aguardando autorização..." : demoMode ? "Simular conexão" : "Conectar com a Meta"}<ArrowSquareOut/></button></div>}{message && <small className="whatsapp-message">{message}</small>}</div></div><aside className="whatsapp-guide"><span>COMO FUNCIONA</span><ol><li className={connected ? "done" : "current"}><i>{connected ? <Check/> : "1"}</i><div><strong>Autorize sua empresa</strong><small>Login e permissões diretamente na Meta</small></div></li><li className={connected ? "done" : ""}><i>{connected ? <Check/> : "2"}</i><div><strong>Vinculação automática</strong><small>YCloud e Nexus identificam seu número</small></div></li><li className={connected ? "done" : ""}><i>{connected ? <Check/> : "3"}</i><div><strong>Ativação do atendimento</strong><small>O workflow recebe as configurações do painel</small></div></li></ol><div className="whatsapp-safe"><LockKey weight="duotone"/><span><strong>Seus acessos ficam protegidos</strong>A Nexus não solicita sua senha do WhatsApp ou Facebook.</span></div></aside></section>;
+  return <section className="whatsapp-view"><div className="whatsapp-hero"><div className="whatsapp-orbit"><i/><i/><i/></div><div className="whatsapp-hero-copy"><span><WhatsappLogo weight="fill"/> CANAL OFICIAL</span><h2>{connected ? "WhatsApp conectado e pronto." : "Conecte seu número. A Nexus cuida do restante."}</h2><p>{connected ? "Seu canal está vinculado ao tenant correto e pode receber o workflow inteligente da Nexus." : "A autorização acontece no ambiente seguro da Meta. Você não precisa compartilhar senha, token ou acesso ao n8n."}</p>{connected ? <div className="connected-number"><i><WhatsappLogo weight="fill"/></i><span><small>{connection.display_name || "Sua empresa"}</small><strong>{connection.phone_number}</strong></span><b><Check weight="bold"/> CONECTADO</b></div> : <div className="connect-form"><label>Número que será conectado<input inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="13 99999-0000"/><small>O código do Brasil (+55) é adicionado automaticamente.</small></label><button className="button whatsapp-button" onClick={connect} disabled={busy}>{busy ? "Aguardando autorização..." : demoMode ? "Simular conexão" : "Conectar com a Meta"}<ArrowSquareOut/></button></div>}{message && <small className="whatsapp-message">{message}</small>}</div></div><aside className="whatsapp-guide"><span>COMO FUNCIONA</span><ol><li className={connected ? "done" : "current"}><i>{connected ? <Check/> : "1"}</i><div><strong>Autorize sua empresa</strong><small>Login e permissões diretamente na Meta</small></div></li><li className={connected ? "done" : ""}><i>{connected ? <Check/> : "2"}</i><div><strong>Vinculação automática</strong><small>YCloud e Nexus identificam seu número</small></div></li><li className={connected ? "done" : ""}><i>{connected ? <Check/> : "3"}</i><div><strong>Ativação do atendimento</strong><small>O workflow recebe as configurações do painel</small></div></li></ol><div className="whatsapp-safe"><LockKey weight="duotone"/><span><strong>Seus acessos ficam protegidos</strong>A Nexus não solicita sua senha do WhatsApp ou Facebook.</span></div></aside></section>;
 }
 
 type BillingState = {
