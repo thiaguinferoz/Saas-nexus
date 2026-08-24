@@ -111,8 +111,9 @@ function Overview({ progress, completed, goTo }: { progress: number; completed: 
 type CatalogItemSummary = { id?: string; name: string; category: string; price: string; status: string };
 
 function CatalogPanel({ demoMode }: { demoMode: boolean }) {
-  const [fileName, setFileName] = useState("");
-  const [analyzed, setAnalyzed] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState("");
   const [items, setItems] = useState<CatalogItemSummary[]>([
     { name: "Consultoria inicial", category: "Serviços", price: "R$ 180,00", status: "Disponível" },
     { name: "Instalação padrão", category: "Serviços", price: "R$ 350,00", status: "Disponível" },
@@ -132,7 +133,24 @@ function CatalogPanel({ demoMode }: { demoMode: boolean }) {
         })));
       }).catch(() => null);
   }, [demoMode]);
-  return <section className="personalization-view"><div className="automation-explainer"><span><Lightning weight="fill"/></span><div><strong>Catálogo padrão para qualquer tipo de negócio</strong><p>O cliente envia a planilha, confirma o significado das colunas e publica. Produtos, serviços e valores ficam estruturados no banco e isolados por empresa.</p></div><b>AUTOMÁTICO</b></div><div className="personalization-grid catalog-layout"><article className="module-card import-card"><div className="module-card-head"><span><UploadSimple/></span><div><h2>Importar catálogo</h2><p>CSV ou Excel com produtos, serviços e valores.</p></div></div><label className={`upload-zone ${fileName ? "has-file" : ""}`}><input type="file" accept=".csv,.xlsx,.xls" onChange={(event) => { setFileName(event.target.files?.[0]?.name ?? ""); setAnalyzed(false); }}/><FileCsv weight="duotone"/><strong>{fileName || "Arraste a planilha ou selecione um arquivo"}</strong><small>{fileName ? "Arquivo selecionado. Agora analise as colunas." : "Até 20 MB • CSV, XLS ou XLSX"}</small></label><button className="module-primary-button" disabled={!fileName} onClick={() => setAnalyzed(true)}><Sparkle weight="fill"/> Analisar colunas automaticamente</button>{analyzed && <div className="mapping-preview"><div><span>Coluna encontrada</span><span>Usar como</span></div><p><b>Nome</b><em>Nome do item <Check/></em></p><p><b>Valor</b><em>Preço <Check/></em></p><p><b>Categoria</b><em>Tipo do item <Check/></em></p><small>O cliente revisa este mapeamento antes de publicar.</small></div>}</article><article className="module-card catalog-card"><div className="module-card-head"><span><FileCsv/></span><div><h2>Catálogo publicado</h2><p>{demoMode ? "Exemplo genérico da estrutura padrão." : `${items.length} itens disponíveis para a IA.`}</p></div><button className="ghost-action">+ Novo item</button></div><div className="catalog-table"><div className="catalog-table-head"><span>Item</span><span>Categoria</span><span>Valor</span><span>Status</span></div>{items.length ? items.map((item) => <div className="catalog-table-row" key={item.id || item.name}><strong>{item.name}</strong><span>{item.category}</span><b>{item.price}</b><em>{item.status}</em></div>) : <div className="catalog-empty">Seu catálogo ainda está vazio. Importe uma planilha ou crie o primeiro item.</div>}</div><div className="structured-note"><LockKey/><span><strong>Valores sempre exatos</strong>Preços são consultados diretamente no catálogo estruturado, e não na memória do modelo.</span></div></article></div></section>;
+  function summarize(item: { id: string; name: string; category?: string; price?: string; currency: string; is_active: boolean }): CatalogItemSummary {
+    return { id: item.id, name: item.name, category: item.category || "Sem categoria", price: item.price == null ? "Sob consulta" : new Intl.NumberFormat("pt-BR", { style: "currency", currency: item.currency || "BRL" }).format(Number(item.price)), status: item.is_active ? "Disponível" : "Inativo" };
+  }
+  async function importCatalog() {
+    if (!file) return;
+    setBusy(true); setFeedback("");
+    try {
+      const data = new FormData(); data.append("file", file);
+      const response = await fetch(`${API_URL}/catalog/import`, { method: "POST", credentials: "include", headers: { "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")) }, body: data });
+      const body = await response.json();
+      if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : body.detail?.message || "Não foi possível importar a planilha.");
+      setItems((body.items as Array<{ id: string; name: string; category?: string; price?: string; currency: string; is_active: boolean }>).map(summarize));
+      setFeedback(`${body.imported} item(ns) importado(s)${body.updated ? ` e ${body.updated} atualizado(s)` : ""}.${body.skipped ? ` ${body.skipped} linha(s) foram ignoradas.` : ""}`);
+      setFile(null);
+    } catch (reason) { setFeedback(reason instanceof Error ? reason.message : "Não foi possível importar a planilha."); }
+    finally { setBusy(false); }
+  }
+  return <section className="personalization-view"><div className="automation-explainer"><span><Lightning weight="fill"/></span><div><strong>Catálogo padrão para qualquer tipo de negócio</strong><p>Envie uma planilha e a Nexus transforma produtos, serviços e valores em dados estruturados e isolados por empresa.</p></div><b>AUTOMÁTICO</b></div><div className="personalization-grid catalog-layout"><article className="module-card import-card"><div className="module-card-head"><span><UploadSimple/></span><div><h2>Importar catálogo</h2><p>CSV ou Excel com produtos, serviços e valores.</p></div></div><label className={`upload-zone ${file ? "has-file" : ""}`}><input type="file" accept=".csv,.xlsx" onChange={(event) => { setFile(event.target.files?.[0] ?? null); setFeedback(""); }}/><FileCsv weight="duotone"/><strong>{file?.name || "Arraste a planilha ou selecione um arquivo"}</strong><small>{file ? "Arquivo selecionado e pronto para importar." : "Até 20 MB • CSV ou XLSX"}</small></label><button className="module-primary-button" disabled={!file || busy} onClick={importCatalog}><Sparkle weight="fill"/> {busy ? "Importando..." : "Extrair e publicar itens"}</button>{feedback && <div className="mapping-preview"><small>{feedback}</small></div>}<small>Colunas reconhecidas: nome/produto/serviço, preço/valor, categoria/tipo e SKU/código.</small></article><article className="module-card catalog-card"><div className="module-card-head"><span><FileCsv/></span><div><h2>Catálogo publicado</h2><p>{demoMode ? "Exemplo genérico da estrutura padrão." : `${items.length} itens disponíveis para a IA.`}</p></div><button className="ghost-action">+ Novo item</button></div><div className="catalog-table"><div className="catalog-table-head"><span>Item</span><span>Categoria</span><span>Valor</span><span>Status</span></div>{items.length ? items.map((item) => <div className="catalog-table-row" key={item.id || item.name}><strong>{item.name}</strong><span>{item.category}</span><b>{item.price}</b><em>{item.status}</em></div>) : <div className="catalog-empty">Seu catálogo ainda está vazio. Importe uma planilha ou crie o primeiro item.</div>}</div><div className="structured-note"><LockKey/><span><strong>Valores sempre exatos</strong>Preços são consultados diretamente no catálogo estruturado, e não na memória do modelo.</span></div></article></div></section>;
 }
 
 function KnowledgePanel() {

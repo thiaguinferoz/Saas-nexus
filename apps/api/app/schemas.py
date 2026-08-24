@@ -200,6 +200,14 @@ class CatalogItemRead(BaseModel):
     updated_at: datetime
 
 
+class CatalogImportRead(BaseModel):
+    imported: int
+    updated: int
+    skipped: int
+    errors: list[str]
+    items: list[CatalogItemRead]
+
+
 class SupportTicketCreate(BaseModel):
     category: SupportTicketCategory = SupportTicketCategory.SUPPORT
     subject: str = Field(min_length=4, max_length=200)
