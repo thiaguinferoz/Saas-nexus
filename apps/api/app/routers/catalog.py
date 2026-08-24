@@ -6,7 +6,7 @@ import uuid
 from decimal import Decimal, InvalidOperation
 from numbers import Number
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -54,6 +54,23 @@ def first_value(row: dict[str, object], field: str) -> object | None:
         value = row.get(alias)
         if value is not None and str(value).strip():
             return value
+    for header, value in row.items():
+        if value is None or not str(value).strip():
+            continue
+        if any(len(alias) >= 4 and alias in header for alias in CATALOG_HEADER_ALIASES[field]):
+            return value
+    return None
+
+
+def matching_header(headers: list[str], field: str) -> str | None:
+    aliases = CATALOG_HEADER_ALIASES[field]
+    for header in headers:
+        if normalize_header(header) in aliases:
+            return header
+    for header in headers:
+        normalized = normalize_header(header)
+        if any(len(alias) >= 4 and alias in normalized for alias in aliases):
+            return header
     return None
 
 
@@ -88,8 +105,8 @@ def parse_price(value: object | None) -> Decimal | None:
 
 
 def header_score(values: tuple[object, ...] | list[object]) -> int:
-    normalized = {normalize_header(value) for value in values if value is not None}
-    return sum(bool(normalized.intersection(aliases)) for aliases in CATALOG_HEADER_ALIASES.values())
+    headers = [str(value) for value in values if value is not None]
+    return sum(matching_header(headers, field) is not None for field in CATALOG_HEADER_ALIASES)
 
 
 def tabular_rows(values: list[tuple[object, ...]]) -> tuple[int, list[tuple[int, dict[str, object]]]]:
@@ -98,12 +115,18 @@ def tabular_rows(values: list[tuple[object, ...]]) -> tuple[int, list[tuple[int,
     candidates = [(header_score(row), index) for index, row in enumerate(values[:20])]
     score, header_index = max(candidates, default=(0, 0))
     if score == 0:
-        return 0, []
-    headers = [normalize_header(header) for header in values[header_index]]
+        populated = [
+            (sum(value is not None and str(value).strip() != "" for value in row), index)
+            for index, row in enumerate(values[:20])
+        ]
+        column_count, header_index = max(populated, default=(0, 0))
+        if column_count < 2:
+            return 0, []
+    headers = [str(header).strip() if header is not None and str(header).strip() else f"Coluna {index + 1}" for index, header in enumerate(values[header_index])]
     rows = [
         (
             row_index + 1,
-            {headers[index]: value for index, value in enumerate(row) if index < len(headers) and headers[index]},
+            {headers[index]: value for index, value in enumerate(row) if index < len(headers)},
         )
         for row_index, row in enumerate(values[header_index + 1 :], start=header_index + 1)
         if any(value is not None and str(value).strip() for value in row)
@@ -134,7 +157,7 @@ def spreadsheet_rows(filename: str, content: bytes) -> list[tuple[int, dict[str,
         for sheet in workbook.worksheets:
             matrix = list(sheet.iter_rows(max_row=MAX_CATALOG_ROWS + 20, values_only=True))
             score, rows = tabular_rows(matrix)
-            if score > best_score:
+            if score > best_score or (not best_rows and rows):
                 best_score, best_rows = score, rows
         return best_rows
     raise HTTPException(status_code=415, detail="Envie uma planilha CSV ou XLSX")
@@ -146,6 +169,11 @@ async def import_catalog(
     db: DbSession,
     _csrf: CsrfGuard,
     file: UploadFile = File(...),
+    mapping_confirmed: bool = Form(False),
+    name_column: str | None = Form(None),
+    price_column: str | None = Form(None),
+    category_column: str | None = Form(None),
+    sku_column: str | None = Form(None),
 ) -> CatalogImportRead:
     filename = file.filename or ""
     if not filename.lower().endswith((".csv", ".xlsx")):
@@ -173,29 +201,58 @@ async def import_catalog(
             },
         )
 
+    headers = list(raw_rows[0][1])
+    suggested_mapping = {
+        "name": matching_header(headers, "name"),
+        "price": matching_header(headers, "price"),
+        "category": matching_header(headers, "category"),
+        "sku": matching_header(headers, "sku"),
+    }
+    if not mapping_confirmed and (not suggested_mapping["name"] or not suggested_mapping["price"]):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": "Confirme quais colunas representam o item e o preço",
+                "mapping_required": True,
+                "headers": headers,
+                "suggested_mapping": suggested_mapping,
+            },
+        )
+
+    selected_mapping = {
+        "name": normalize_header(name_column) if mapping_confirmed and name_column else None,
+        "price": normalize_header(price_column) if mapping_confirmed and price_column else None,
+        "category": normalize_header(category_column) if mapping_confirmed and category_column else None,
+        "sku": normalize_header(sku_column) if mapping_confirmed and sku_column else None,
+    }
+    if mapping_confirmed and not selected_mapping["name"]:
+        raise HTTPException(status_code=422, detail="Selecione a coluna que contém o nome do item")
+
     imported = updated = skipped = 0
     errors: list[str] = []
     price_headers = set(CATALOG_HEADER_ALIASES["price"])
-    if not any(price_headers.intersection(row) for _, row in raw_rows):
+    if not selected_mapping["price"] and not any(
+        any(alias in normalize_header(header) for alias in price_headers) for header in headers
+    ):
         errors.append(
             "Nenhuma coluna de preço foi reconhecida; os itens foram publicados como 'Sob consulta'."
         )
     results: list[CatalogItem] = []
     for row_number, raw_row in raw_rows:
         row = {normalize_header(key): value for key, value in raw_row.items()}
-        name_value = first_value(row, "name")
+        name_value = row.get(selected_mapping["name"]) if selected_mapping["name"] else first_value(row, "name")
         name = str(name_value).strip() if name_value is not None else None
         if not name:
             skipped += 1
             errors.append(f"Linha {row_number}: informe o nome do produto ou serviço")
             continue
-        price_value = first_value(row, "price")
+        price_value = row.get(selected_mapping["price"]) if selected_mapping["price"] else first_value(row, "price")
         price = parse_price(price_value)
         if price_value is not None and price is None:
             skipped += 1
             errors.append(f"Linha {row_number}: preço inválido")
             continue
-        sku_value = first_value(row, "sku")
+        sku_value = row.get(selected_mapping["sku"]) if selected_mapping["sku"] else first_value(row, "sku")
         sku = str(sku_value).strip() if sku_value is not None else None
         item = None
         if sku:
@@ -203,7 +260,7 @@ async def import_catalog(
         values = {
             "name": name[:200],
             "description": str(value).strip() if (value := first_value(row, "description")) is not None else None,
-            "category": str(value).strip() if (value := first_value(row, "category")) is not None else None,
+            "category": str(value).strip() if (value := (row.get(selected_mapping["category"]) if selected_mapping["category"] else first_value(row, "category"))) is not None else None,
             "sku": sku,
             "price": price,
             "currency": str(first_value(row, "currency") or "BRL").upper()[:3],

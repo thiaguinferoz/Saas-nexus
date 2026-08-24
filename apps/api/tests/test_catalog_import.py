@@ -3,7 +3,7 @@ import io
 import pytest
 from openpyxl import Workbook
 
-from app.routers.catalog import parse_price, spreadsheet_rows
+from app.routers.catalog import matching_header, parse_price, spreadsheet_rows
 
 
 @pytest.mark.parametrize(
@@ -35,9 +35,9 @@ def test_xlsx_finds_table_after_title_and_common_commercial_headers() -> None:
     assert len(rows) == 1
     row_number, row = rows[0]
     assert row_number == 4
-    assert row["codigodoproduto"] == 101
-    assert row["nomedoproduto"] == "Produto teste"
-    assert row["precodevenda"] == 29.9
+    assert row["Código do produto"] == 101
+    assert row["Nome do produto"] == "Produto teste"
+    assert row["Preço de venda"] == 29.9
 
 
 def test_semicolon_csv_recognizes_value_with_currency_header() -> None:
@@ -47,4 +47,16 @@ def test_semicolon_csv_recognizes_value_with_currency_header() -> None:
     )
 
     assert len(rows) == 1
-    assert rows[0][1]["valorr"] == "150,00"
+    assert rows[0][1]["Valor (R$)"] == "150,00"
+
+
+def test_combined_product_service_header_is_recognized() -> None:
+    rows = spreadsheet_rows(
+        "catalogo.csv",
+        "Código;Produto / Serviço;Grupo;Preço\n1481;BANHO;BANHO E TOSA;395\n".encode(),
+    )
+
+    assert len(rows) == 1
+    assert rows[0][1]["Produto / Serviço"] == "BANHO"
+    assert matching_header(list(rows[0][1]), "name") == "Produto / Serviço"
+    assert matching_header(list(rows[0][1]), "price") == "Preço"
