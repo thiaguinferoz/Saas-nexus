@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -38,8 +38,6 @@ async def create_support_ticket(
     db: DbSession,
     _csrf: CsrfGuard,
 ) -> SupportTicketRead:
-    if payload.preferred_channel != "platform" and not payload.contact_value:
-        raise HTTPException(status_code=422, detail="Informe o contato para o canal selecionado")
     priority = SupportTicketPriority.HIGH if payload.category == SupportTicketCategory.CUSTOM_PLAN else SupportTicketPriority.NORMAL
     ticket = SupportTicket(
         tenant_id=tenant.id,
@@ -63,4 +61,17 @@ async def create_support_ticket(
     )
     await db.commit()
     await db.refresh(ticket)
-    return SupportTicketRead.model_validate(ticket)
+    return SupportTicketRead(
+        id=ticket.id,
+        category=ticket.category,
+        priority=ticket.priority,
+        status=ticket.status,
+        subject=ticket.subject,
+        message=ticket.message,
+        preferred_channel=ticket.preferred_channel,
+        contact_value=None,
+        replies=[],
+        created_at=ticket.created_at,
+        updated_at=ticket.updated_at,
+    )
+
