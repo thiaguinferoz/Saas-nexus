@@ -24,10 +24,10 @@ const audiences = [
   ["Empresas que querem previsibilidade", "Centralize processos e acompanhe o que acontece em cada etapa do atendimento."],
 ];
 
-const benefits = [
-  ["Responda na hora", "Atendimento inteligente 24 horas, inclusive quando sua equipe está offline.", Lightning],
-  ["Converta mais conversas", "Contexto e agilidade para transformar interesse em oportunidade real.", TrendUp],
-  ["Controle em um só lugar", "Visão clara da operação, regras e informações que sua equipe precisa.", CircleNotch],
+const benefits: Array<{ title: string; text: string; Icon: typeof Lightning }> = [
+  { title: "Responda na hora", text: "Atendimento inteligente 24 horas, inclusive quando sua equipe está offline.", Icon: Lightning },
+  { title: "Converta mais conversas", text: "Contexto e agilidade para transformar interesse em oportunidade real.", Icon: TrendUp },
+  { title: "Controle em um só lugar", text: "Visão clara da operação, regras e informações que sua equipe precisa.", Icon: CircleNotch },
 ];
 
 const plans = [
@@ -70,7 +70,7 @@ export default function NexusLanding() {
 
       <section id="beneficios" className="nx-section nx-shell">
         <header className="nx-heading nx-reveal"><p>O VALOR QUE VOCÊ PERCEBE</p><h2>Menos esforço operacional.<br />Mais conversas que viram resultado.</h2></header>
-        <div className="nx-benefits">{benefits.map(([title, text, Icon]) => <article className="nx-reveal" key={title as string}><div className="nx-icon"><Icon weight="duotone" /></div><h3>{title as string}</h3><p>{text as string}</p><span>0{benefits.findIndex(item => item[0] === title) + 1}</span></article>)}</div>
+        <div className="nx-benefits">{benefits.map(({ title, text, Icon }, index) => <article className="nx-reveal" key={title}><div className="nx-icon"><Icon weight="duotone" /></div><h3>{title}</h3><p>{text}</p><span>0{index + 1}</span></article>)}</div>
       </section>
 
       <section id="para-quem" className="nx-audience">
