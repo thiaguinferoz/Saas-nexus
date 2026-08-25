@@ -4,7 +4,7 @@ import "./globals.css";
 import "./professional-refresh.css";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const interfaceFont = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: "Nexus — Automações inteligentes para WhatsApp",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${manrope.variable} ${inter.variable}`}>{children}</body>
+      <body className={`${manrope.variable} ${interfaceFont.variable}`}>{children}</body>
     </html>
   );
 }

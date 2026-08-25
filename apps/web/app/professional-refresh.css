@@ -25,11 +25,18 @@ body {
   color: var(--ink);
   background: var(--cream);
   font-family: var(--font-inter), sans-serif;
+  font-weight: 400;
+  letter-spacing: -.012em;
+  font-feature-settings: "ss01" 1, "ss03" 1;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 button, input, select, textarea { font-family: inherit; }
-h1, h2, h3, h4, .nexus-brand { font-family: var(--font-manrope), sans-serif; }
+h1, h2, h3, h4, .nexus-brand {
+  font-family: var(--font-manrope), sans-serif;
+  font-weight: 700;
+  letter-spacing: -.035em;
+}
 .shell { width: min(1200px, calc(100% - 48px)); }
 
 .button,
@@ -336,7 +343,20 @@ h1, h2, h3, h4, .nexus-brand { font-family: var(--font-manrope), sans-serif; }
   background: #111827;
   border-right: 1px solid #202a3c;
   box-shadow: none;
+  scrollbar-width: thin;
+  scrollbar-color: #46536a transparent;
+  scrollbar-gutter: stable;
 }
+.client-portal .sidebar::-webkit-scrollbar { width: 6px; }
+.client-portal .sidebar::-webkit-scrollbar-track { background: transparent; }
+.client-portal .sidebar::-webkit-scrollbar-thumb {
+  min-height: 56px;
+  border: 1px solid #111827;
+  border-radius: 99px;
+  background: #46536a;
+}
+.client-portal .sidebar::-webkit-scrollbar-thumb:hover { background: #637087; }
+.client-portal .sidebar::-webkit-scrollbar-button { width: 0; height: 0; display: none; }
 .client-portal .sidebar .nexus-brand { padding: 2px 8px; }
 .client-portal .sidebar .nexus-brand > span:last-child { font-size: 15px; letter-spacing: 2px; }
 .client-portal .sidebar .nexus-brand small { color: #8490a3; }
@@ -353,8 +373,10 @@ h1, h2, h3, h4, .nexus-brand { font-family: var(--font-manrope), sans-serif; }
   border: 0;
   border-radius: 8px;
   color: #a8b2c2;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 620;
+  letter-spacing: -.012em;
+  line-height: 1.25;
   transform: none;
 }
 .client-portal .sidebar nav button:hover { color: #fff; background: #192438; transform: none; }
