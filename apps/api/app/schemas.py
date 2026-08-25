@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
@@ -220,8 +221,8 @@ class SupportTicketCreate(BaseModel):
     category: SupportTicketCategory = SupportTicketCategory.SUPPORT
     subject: str = Field(min_length=4, max_length=200)
     message: str = Field(min_length=10, max_length=8000)
-    preferred_channel: str = Field(default="platform", pattern=r"^(platform|email|whatsapp|phone)$")
-    contact_value: str | None = Field(default=None, max_length=320)
+    preferred_channel: Literal["platform"] = "platform"
+    contact_value: None = None
 
 
 class SupportTicketReplyCreate(BaseModel):
@@ -294,3 +295,4 @@ class AdminOverviewRead(BaseModel):
 
 class AdminSupportTicketUpdate(BaseModel):
     status: SupportTicketStatus
+
