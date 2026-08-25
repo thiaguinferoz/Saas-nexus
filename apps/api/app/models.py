@@ -150,6 +150,10 @@ class Subscription(Base):
     provider: Mapped[str] = mapped_column(String(32), default="stripe")
     provider_customer_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
     provider_subscription_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    plan_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    billing_interval: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    amount_paid_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    last_payment_method: Mapped[str | None] = mapped_column(String(32), nullable=True)
     checkout_attempt_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
     checkout_attempt_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[SubscriptionStatus] = mapped_column(Enum(SubscriptionStatus), default=SubscriptionStatus.PENDING)
@@ -160,6 +164,27 @@ class Subscription(Base):
     last_provider_event_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class BillingOrder(Base):
+    __tablename__ = "billing_orders"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"), index=True)
+    subscription_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("subscriptions.id", ondelete="CASCADE"), index=True)
+    provider: Mapped[str] = mapped_column(String(32), default="infinitepay", index=True)
+    plan_code: Mapped[str] = mapped_column(String(32))
+    billing_interval: Mapped[str] = mapped_column(String(16))
+    amount_cents: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(24), default="pending", index=True)
+    checkout_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    provider_transaction_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    provider_invoice_slug: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    capture_method: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    installments: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 

@@ -22,6 +22,15 @@ async def sync_billing_access(db: AsyncSession, tenant: Tenant) -> tuple[Subscri
         and subscription.trial_ends_at > now
     )
     changed = False
+    paid_period_expired = (
+        subscription.status == SubscriptionStatus.ACTIVE
+        and subscription.current_period_end is not None
+        and subscription.current_period_end <= now
+    )
+    if paid_period_expired:
+        subscription.status = SubscriptionStatus.INCOMPLETE
+        tenant.status = TenantStatus.SUSPENDED
+        changed = True
     if subscription.status == SubscriptionStatus.TRIALING and not trial_active:
         subscription.status = SubscriptionStatus.INCOMPLETE
         tenant.status = TenantStatus.SUSPENDED

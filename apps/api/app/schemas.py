@@ -95,9 +95,24 @@ class BillingSessionRead(BaseModel):
     url: str
 
 
+class BillingCheckoutCreate(BaseModel):
+    plan: Literal["common", "custom"] = "common"
+    interval: Literal["monthly", "annual"] = "monthly"
+
+
+class InfinitePayVerificationRequest(BaseModel):
+    order_nsu: str = Field(min_length=10, max_length=255)
+    transaction_nsu: str = Field(min_length=5, max_length=255)
+    slug: str = Field(min_length=1, max_length=255)
+
+
 class SubscriptionRead(BaseModel):
     status: SubscriptionStatus
     provider: str
+    plan_code: str | None = None
+    billing_interval: str | None = None
+    amount_paid_cents: int | None = None
+    last_payment_method: str | None = None
     current_period_end: datetime | None = None
     trial_ends_at: datetime | None = None
     grace_ends_at: datetime | None = None
@@ -295,4 +310,3 @@ class AdminOverviewRead(BaseModel):
 
 class AdminSupportTicketUpdate(BaseModel):
     status: SupportTicketStatus
-

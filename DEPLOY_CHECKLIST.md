@@ -43,8 +43,11 @@ Não use `alembic stamp` apenas para contornar um erro. Primeiro compare o schem
 
 ### Stripe
 
-- [ ] `BILLING_PROVIDER=stripe`.
-- [ ] `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` e `STRIPE_PRICE_ID` são reais e pertencem todos ao mesmo modo: teste ou produção.
+- [ ] `BILLING_PROVIDER=infinitepay`.
+- [ ] `INFINITEPAY_HANDLE=caio-alves-g6m` (sem o símbolo `$`).
+- [ ] `INFINITEPAY_API_URL=https://api.checkout.infinitepay.io`.
+- [ ] `INFINITEPAY_WEBHOOK_URL` aponta para `https://api.seudominio/v1/webhooks/infinitepay` e está publicamente acessível.
+- [ ] No App InfinitePay, em **Vendas > Checkout > Configurações**, o Checkout Integrado está habilitado, Pix e cartão estão ativos e a opção **Assumir taxas** está selecionada.
 - [ ] O Price é recorrente, usa a moeda e o intervalo esperados e está ativo.
 - [ ] `TRIAL_DAYS` corresponde à oferta publicada.
 - [ ] `BILLING_GRACE_DAYS` corresponde à política de inadimplência publicada.
@@ -77,8 +80,7 @@ Antes de continuar, procurar explicitamente por valores como `troque`, `seudomin
 
 ## 5. Preparar Stripe e webhooks externos
 
-- [ ] Cadastrar no Stripe o endpoint `https://api.seudominio/v1/webhooks/stripe`.
-- [ ] Assinar os eventos realmente tratados pela versão implantada e copiar o novo signing secret para `STRIPE_WEBHOOK_SECRET`.
+- [ ] Fazer uma cobrança real de baixo risco e confirmar que o webhook `https://api.seudominio/v1/webhooks/infinitepay` ativa o plano apenas depois de `payment_check` retornar pagamento aprovado.
 - [ ] Cadastrar na YCloud o endpoint `https://api.seudominio/v1/webhooks/ycloud` e os eventos listados em `AUTOMACAO_RUNBOOK.md`.
 - [ ] Confirmar que firewalls, proxy e limites de corpo permitem os webhooks, sem desabilitar a validação de assinatura.
 

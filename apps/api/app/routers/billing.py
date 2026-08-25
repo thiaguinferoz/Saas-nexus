@@ -1,5 +1,6 @@
 import math
 import uuid
+from calendar import monthrange
 from datetime import UTC, datetime, timedelta
 
 import stripe
@@ -8,22 +9,37 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.billing.access import sync_billing_access
+from app.billing.infinitepay_provider import (
+    InfinitePayBillingProvider,
+    InfinitePayError,
+    InfinitePayPayment,
+    get_plan_offer,
+)
 from app.billing.stripe_provider import StripeBillingProvider
 from app.config import get_settings
 from app.dependencies import CsrfGuard, CurrentTenant, CurrentUser, DbSession
-from app.models import OutboxEvent, Subscription, SubscriptionStatus, Tenant, TenantStatus, WebhookEvent
-from app.schemas import BillingSessionRead, SubscriptionRead
+from app.models import BillingOrder, OutboxEvent, Subscription, SubscriptionStatus, Tenant, TenantStatus, WebhookEvent
+from app.schemas import BillingCheckoutCreate, BillingSessionRead, InfinitePayVerificationRequest, SubscriptionRead
 
 router = APIRouter(tags=["billing"])
 settings = get_settings()
 
 
-def get_provider() -> StripeBillingProvider:
+def get_stripe_provider() -> StripeBillingProvider:
     if settings.billing_provider != "stripe":
         raise HTTPException(status_code=503, detail="Provedor de cobrança não suportado")
     try:
         return StripeBillingProvider()
     except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+def get_infinitepay_provider() -> InfinitePayBillingProvider:
+    if settings.billing_provider != "infinitepay":
+        raise HTTPException(status_code=503, detail="InfinitePay não está ativa")
+    try:
+        return InfinitePayBillingProvider()
+    except InfinitePayError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
@@ -39,21 +55,102 @@ async def read_subscription(tenant: CurrentTenant, db: DbSession) -> Subscriptio
     return SubscriptionRead(
         status=subscription.status,
         provider=subscription.provider,
+        plan_code=subscription.plan_code,
+        billing_interval=subscription.billing_interval,
+        amount_paid_cents=subscription.amount_paid_cents,
+        last_payment_method=subscription.last_payment_method,
         current_period_end=subscription.current_period_end,
         trial_ends_at=subscription.trial_ends_at,
         grace_ends_at=subscription.grace_ends_at,
         trial_days_remaining=math.ceil(trial_seconds / 86400) if trial_active else 0,
         access_allowed=access_allowed,
-        management_available=bool(
+        management_available=subscription.provider == "stripe" and bool(
             subscription.provider_customer_id and subscription.provider_subscription_id
         ),
         cancel_at_period_end=subscription.cancel_at_period_end,
     )
 
 
+async def create_infinitepay_checkout(
+    payload: BillingCheckoutCreate,
+    tenant: CurrentTenant,
+    user: CurrentUser,
+    db: DbSession,
+) -> BillingSessionRead:
+    provider = get_infinitepay_provider()
+    offer = get_plan_offer(payload.plan, payload.interval)
+    subscription = await db.scalar(
+        select(Subscription).where(Subscription.tenant_id == tenant.id).with_for_update()
+    )
+    if not subscription:
+        subscription = Subscription(tenant_id=tenant.id, provider="infinitepay")
+        db.add(subscription)
+        await db.flush()
+
+    now = datetime.now(UTC)
+    reusable_order = await db.scalar(
+        select(BillingOrder)
+        .where(
+            BillingOrder.tenant_id == tenant.id,
+            BillingOrder.provider == "infinitepay",
+            BillingOrder.plan_code == payload.plan,
+            BillingOrder.billing_interval == payload.interval,
+            BillingOrder.status == "pending",
+            BillingOrder.created_at > now - timedelta(hours=24),
+        )
+        .order_by(BillingOrder.created_at.desc())
+        .limit(1)
+        .with_for_update()
+    )
+    if reusable_order and reusable_order.checkout_url:
+        return BillingSessionRead(url=reusable_order.checkout_url)
+
+    order = reusable_order or BillingOrder(
+        tenant_id=tenant.id,
+        subscription_id=subscription.id,
+        provider="infinitepay",
+        plan_code=payload.plan,
+        billing_interval=payload.interval,
+        amount_cents=offer.amount_cents,
+        status="pending",
+    )
+    if reusable_order is None:
+        db.add(order)
+        await db.flush()
+    subscription.provider = "infinitepay"
+    await db.commit()
+
+    try:
+        checkout = await provider.create_checkout(
+            order_nsu=f"nexus-{order.id}",
+            offer=offer,
+            customer_name=user.full_name,
+            customer_email=user.email,
+            redirect_url=f"{settings.frontend_url}/app?checkout=success",
+            webhook_url=settings.infinitepay_webhook_url,
+        )
+    except InfinitePayError as exc:
+        order.status = "failed"
+        await db.commit()
+        raise HTTPException(status_code=502, detail="Não foi possível iniciar o pagamento agora") from exc
+
+    order.checkout_url = checkout.url
+    await db.commit()
+    return BillingSessionRead(url=checkout.url)
+
+
 @router.post("/billing/checkout", response_model=BillingSessionRead)
-async def create_checkout(tenant: CurrentTenant, user: CurrentUser, db: DbSession, _csrf: CsrfGuard) -> BillingSessionRead:
-    provider = get_provider()
+async def create_checkout(
+    payload: BillingCheckoutCreate,
+    tenant: CurrentTenant,
+    user: CurrentUser,
+    db: DbSession,
+    _csrf: CsrfGuard,
+) -> BillingSessionRead:
+    if settings.billing_provider == "infinitepay":
+        return await create_infinitepay_checkout(payload, tenant, user, db)
+
+    provider = get_stripe_provider()
     subscription = await db.scalar(
         select(Subscription).where(Subscription.tenant_id == tenant.id).with_for_update()
     )
@@ -124,11 +221,16 @@ async def create_checkout(tenant: CurrentTenant, user: CurrentUser, db: DbSessio
 
 @router.post("/billing/portal", response_model=BillingSessionRead)
 async def create_portal(tenant: CurrentTenant, db: DbSession, _csrf: CsrfGuard) -> BillingSessionRead:
+    if settings.billing_provider == "infinitepay":
+        raise HTTPException(
+            status_code=409,
+            detail="A InfinitePay usa renovação manual. Escolha um plano para gerar uma nova cobrança.",
+        )
     subscription = await db.scalar(select(Subscription).where(Subscription.tenant_id == tenant.id))
     if not subscription or not subscription.provider_customer_id:
         raise HTTPException(status_code=404, detail="Assinatura ainda não possui cliente de cobrança")
     try:
-        session = await get_provider().create_portal(
+        session = await get_stripe_provider().create_portal(
             customer_id=subscription.provider_customer_id,
             return_url=f"{settings.frontend_url}/app",
         )
@@ -256,6 +358,205 @@ async def apply_subscription_state(db: DbSession, data: dict, event_created_at: 
         subscription.grace_ends_at = None
         tenant.status = TenantStatus.SUSPENDED
     return True
+
+
+def parse_infinitepay_order_id(order_nsu: object) -> uuid.UUID | None:
+    if not isinstance(order_nsu, str) or not order_nsu.startswith("nexus-"):
+        return None
+    return parse_uuid(order_nsu.removeprefix("nexus-"))
+
+
+def add_billing_period(value: datetime, interval: str) -> datetime:
+    months = 12 if interval == "annual" else 1
+    month_index = value.month - 1 + months
+    year = value.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(value.day, monthrange(year, month)[1])
+    return value.replace(year=year, month=month, day=day)
+
+
+async def apply_infinitepay_payment(
+    db: DbSession,
+    *,
+    order: BillingOrder,
+    transaction_nsu: str,
+    invoice_slug: str,
+    payment: InfinitePayPayment,
+    event_payload: dict,
+) -> None:
+    if not payment.paid:
+        raise HTTPException(status_code=400, detail="Pagamento ainda não foi confirmado")
+    if payment.amount_cents != order.amount_cents:
+        raise HTTPException(status_code=400, detail="Valor do pagamento não corresponde ao pedido")
+    if order.status == "paid":
+        if order.provider_transaction_id != transaction_nsu:
+            raise HTTPException(status_code=409, detail="Pedido já foi pago por outra transação")
+        return
+
+    existing_transaction = await db.scalar(
+        select(BillingOrder.id).where(
+            BillingOrder.provider_transaction_id == transaction_nsu,
+            BillingOrder.id != order.id,
+        )
+    )
+    if existing_transaction:
+        raise HTTPException(status_code=409, detail="Transação já vinculada a outro pedido")
+
+    record = WebhookEvent(
+        provider="infinitepay",
+        external_event_id=transaction_nsu,
+        event_type="payment.paid",
+        payload=event_payload,
+    )
+    db.add(record)
+    try:
+        await db.flush()
+    except IntegrityError:
+        await db.rollback()
+        return
+
+    subscription = await db.scalar(
+        select(Subscription).where(Subscription.id == order.subscription_id).with_for_update()
+    )
+    if not subscription or subscription.tenant_id != order.tenant_id:
+        raise HTTPException(status_code=400, detail="Assinatura do pedido não encontrada")
+
+    now = datetime.now(UTC)
+    old_status = subscription.status
+    period_start = (
+        subscription.current_period_end
+        if subscription.status == SubscriptionStatus.ACTIVE
+        and subscription.current_period_end is not None
+        and subscription.current_period_end > now
+        else now
+    )
+    subscription.provider = "infinitepay"
+    subscription.provider_subscription_id = transaction_nsu
+    subscription.plan_code = order.plan_code
+    subscription.billing_interval = order.billing_interval
+    subscription.amount_paid_cents = order.amount_cents
+    subscription.last_payment_method = payment.capture_method
+    subscription.status = SubscriptionStatus.ACTIVE
+    subscription.current_period_end = add_billing_period(period_start, order.billing_interval)
+    subscription.grace_ends_at = None
+    subscription.cancel_at_period_end = False
+    subscription.checkout_attempt_id = None
+    subscription.checkout_attempt_created_at = None
+    subscription.last_provider_event_created_at = now
+
+    order.status = "paid"
+    order.provider_transaction_id = transaction_nsu
+    order.provider_invoice_slug = invoice_slug
+    order.capture_method = payment.capture_method
+    order.installments = payment.installments
+    order.paid_at = now
+    record.processed = True
+
+    tenant = await db.get(Tenant, order.tenant_id)
+    if tenant and (
+        old_status != SubscriptionStatus.ACTIVE
+        or tenant.status
+        in {
+            TenantStatus.PENDING_PAYMENT,
+            TenantStatus.GRACE_PERIOD,
+            TenantStatus.SUSPENDED,
+            TenantStatus.CANCELED,
+        }
+    ):
+        tenant.status = TenantStatus.PROVISIONING
+        db.add(
+            OutboxEvent(
+                tenant_id=tenant.id,
+                event_type="tenant.provisioning.requested",
+                payload={
+                    "tenant_id": str(tenant.id),
+                    "source": "infinitepay",
+                    "plan": order.plan_code,
+                    "interval": order.billing_interval,
+                },
+            )
+        )
+    await db.commit()
+
+
+async def verify_infinitepay_order(
+    db: DbSession,
+    *,
+    order_nsu: str,
+    transaction_nsu: str,
+    invoice_slug: str,
+    event_payload: dict,
+    tenant_id: uuid.UUID | None = None,
+) -> None:
+    order_id = parse_infinitepay_order_id(order_nsu)
+    if not order_id:
+        raise HTTPException(status_code=400, detail="Pedido inválido")
+    order = await db.scalar(select(BillingOrder).where(BillingOrder.id == order_id).with_for_update())
+    if not order or order.provider != "infinitepay":
+        raise HTTPException(status_code=400, detail="Pedido não encontrado")
+    if tenant_id is not None and order.tenant_id != tenant_id:
+        raise HTTPException(status_code=403, detail="Pedido não pertence a esta conta")
+    if order.status == "paid" and order.provider_transaction_id == transaction_nsu:
+        return
+
+    try:
+        payment = await get_infinitepay_provider().verify_payment(
+            order_nsu=order_nsu,
+            transaction_nsu=transaction_nsu,
+            slug=invoice_slug,
+        )
+    except InfinitePayError as exc:
+        raise HTTPException(status_code=502, detail="Não foi possível confirmar o pagamento agora") from exc
+    await apply_infinitepay_payment(
+        db,
+        order=order,
+        transaction_nsu=transaction_nsu,
+        invoice_slug=invoice_slug,
+        payment=payment,
+        event_payload=event_payload,
+    )
+
+
+@router.post("/billing/infinitepay/verify")
+async def verify_infinitepay_redirect(
+    payload: InfinitePayVerificationRequest,
+    tenant: CurrentTenant,
+    db: DbSession,
+    _csrf: CsrfGuard,
+) -> dict[str, bool]:
+    event_payload = payload.model_dump()
+    await verify_infinitepay_order(
+        db,
+        order_nsu=payload.order_nsu,
+        transaction_nsu=payload.transaction_nsu,
+        invoice_slug=payload.slug,
+        event_payload=event_payload,
+        tenant_id=tenant.id,
+    )
+    return {"verified": True}
+
+
+@router.post("/webhooks/infinitepay", include_in_schema=False)
+async def infinitepay_webhook(request: Request, db: DbSession) -> dict[str, bool]:
+    try:
+        payload = await request.json()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Webhook inválido") from exc
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Webhook inválido")
+    order_nsu = payload.get("order_nsu")
+    transaction_nsu = payload.get("transaction_nsu")
+    invoice_slug = payload.get("invoice_slug")
+    if not all(isinstance(value, str) and value for value in (order_nsu, transaction_nsu, invoice_slug)):
+        raise HTTPException(status_code=400, detail="Webhook incompleto")
+    await verify_infinitepay_order(
+        db,
+        order_nsu=order_nsu,
+        transaction_nsu=transaction_nsu,
+        invoice_slug=invoice_slug,
+        event_payload=payload,
+    )
+    return {"success": True}
 
 
 @router.post("/webhooks/stripe", include_in_schema=False)

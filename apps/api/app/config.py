@@ -18,10 +18,13 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 30
     auto_create_tables: bool = False
     n8n_service_token: str | None = None
-    billing_provider: str = "stripe"
+    billing_provider: str = "infinitepay"
     stripe_secret_key: str | None = None
     stripe_webhook_secret: str | None = None
     stripe_price_id: str | None = None
+    infinitepay_handle: str = "caio-alves-g6m"
+    infinitepay_api_url: str = "https://api.checkout.infinitepay.io"
+    infinitepay_webhook_url: str = "https://api.usenexusia.com/v1/webhooks/infinitepay"
     trial_days: int = Field(default=3, ge=1, le=30)
     billing_grace_days: int = Field(default=3, ge=0, le=30)
     resend_api_key: str | None = None

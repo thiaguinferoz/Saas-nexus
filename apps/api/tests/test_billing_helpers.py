@@ -7,10 +7,29 @@ from tests._bootstrap import configure_test_environment
 configure_test_environment()
 
 from app.models import Subscription, SubscriptionStatus  # noqa: E402
-from app.routers.billing import event_is_stale, invoice_subscription_id, mark_event_applied  # noqa: E402
+from app.routers.billing import (  # noqa: E402
+    add_billing_period,
+    event_is_stale,
+    invoice_subscription_id,
+    mark_event_applied,
+    parse_infinitepay_order_id,
+)
 
 
 class BillingWebhookHelperTests(unittest.TestCase):
+    def test_infinitepay_order_identifier_is_strict(self) -> None:
+        order_id = uuid.uuid4()
+
+        self.assertEqual(parse_infinitepay_order_id(f"nexus-{order_id}"), order_id)
+        self.assertIsNone(parse_infinitepay_order_id(str(order_id)))
+        self.assertIsNone(parse_infinitepay_order_id("nexus-not-a-uuid"))
+
+    def test_paid_period_uses_calendar_months(self) -> None:
+        january_end = datetime(2026, 1, 31, 12, 0, tzinfo=UTC)
+
+        self.assertEqual(add_billing_period(january_end, "monthly"), datetime(2026, 2, 28, 12, 0, tzinfo=UTC))
+        self.assertEqual(add_billing_period(january_end, "annual"), datetime(2027, 1, 31, 12, 0, tzinfo=UTC))
+
     def test_invoice_subscription_id_reads_modern_parent_shape(self) -> None:
         invoice = {
             "subscription": "sub_legacy_should_not_win",

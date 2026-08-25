@@ -31,6 +31,19 @@ def subscription_for(tenant: Tenant, *, status: SubscriptionStatus) -> Subscript
 
 
 class BillingAccessTests(unittest.IsolatedAsyncioTestCase):
+    async def test_expired_paid_period_suspends_access_until_manual_renewal(self) -> None:
+        tenant = tenant_with(TenantStatus.ACTIVE)
+        subscription = subscription_for(tenant, status=SubscriptionStatus.ACTIVE)
+        subscription.current_period_end = datetime.now(UTC) - timedelta(seconds=1)
+        db = FakeBillingSession(subscription)
+
+        _, access_allowed = await sync_billing_access(db, tenant)
+
+        self.assertFalse(access_allowed)
+        self.assertEqual(subscription.status, SubscriptionStatus.INCOMPLETE)
+        self.assertEqual(tenant.status, TenantStatus.SUSPENDED)
+        self.assertEqual(db.flush_count, 1)
+
     async def test_active_local_trial_allows_access(self) -> None:
         tenant = tenant_with()
         subscription = subscription_for(tenant, status=SubscriptionStatus.TRIALING)
