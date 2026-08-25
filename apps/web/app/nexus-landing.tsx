@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { AiDemo } from "./shared/ai-demo";
 import {
   ArrowRight,
   Check,
@@ -42,8 +43,11 @@ export default function NexusLanding() {
     <main className="nx">
       <nav className="nx-nav nx-shell">
         <Link href="/" className="nx-brand" aria-label="Nexus, página inicial"><span>N</span>NEXUS</Link>
-        <div className="nx-nav-links"><a href="#beneficios">Benefícios</a><a href="#para-quem">Para quem é</a><a href="#planos">Planos</a></div>
-        <Link className="nx-nav-cta" href={`${appUrl}/cadastro`}>Testar grátis <ArrowRight weight="bold" /></Link>
+        <div className="nx-nav-links"><a href="#beneficios">Benefícios</a><a href="#demonstracao">IA em ação</a><a href="#para-quem">Para quem é</a><a href="#planos">Planos</a></div>
+        <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
+          <Link style={{ color: "#d9d6e8", fontSize: "13px", fontWeight: 800 }} href={`${appUrl}/login`}>Entrar</Link>
+          <Link className="nx-nav-cta" href={`${appUrl}/cadastro`}>Testar grátis <ArrowRight weight="bold" /></Link>
+        </div>
       </nav>
 
       <section className="nx-hero nx-shell">
@@ -53,7 +57,7 @@ export default function NexusLanding() {
           <p className="nx-lead">A Nexus transforma cada conversa em uma oportunidade, com uma IA que atende, entende e faz sua operação avançar.</p>
           <div className="nx-actions">
             <Link className="nx-primary" href={`${appUrl}/cadastro`}>Começar 3 dias grátis <ArrowRight weight="bold" /></Link>
-            <a className="nx-secondary" href="#como-funciona"><Play weight="fill" /> Ver como funciona</a>
+            <a className="nx-secondary" href="#demonstracao"><Play weight="fill" /> Ver a IA funcionando</a>
           </div>
           <p className="nx-no-card"><Check weight="bold" /> Sem cartão de crédito. Cancele quando quiser.</p>
         </div>
@@ -73,6 +77,8 @@ export default function NexusLanding() {
         <header className="nx-heading nx-reveal"><p>O VALOR QUE VOCÊ PERCEBE</p><h2>Menos esforço operacional.<br />Mais conversas que viram resultado.</h2></header>
         <div className="nx-benefits">{benefits.map(({ title, text, Icon }, index) => <article className="nx-reveal" key={title}><div className="nx-icon"><Icon weight="duotone" /></div><h3>{title}</h3><p>{text}</p><span>0{index + 1}</span></article>)}</div>
       </section>
+
+      <AiDemo />
 
       <section id="para-quem" className="nx-audience">
         <div className="nx-shell nx-audience-grid"><div className="nx-audience-copy nx-reveal"><p className="nx-kicker">PARA QUEM É A NEXUS?</p><h2>Para quem sabe que cada mensagem merece uma resposta à altura.</h2><p>Se o WhatsApp é parte importante das suas vendas ou do seu atendimento, a Nexus tira sua operação do modo reativo e coloca inteligência no centro dela.</p><Link className="nx-outline" href={`${appUrl}/cadastro`}>Experimentar agora <ArrowRight weight="bold" /></Link></div><div className="nx-audience-list">{audiences.map(([title, text], index) => <article className="nx-reveal" key={title}><b>0{index + 1}</b><div><h3>{title}</h3><p>{text}</p></div><ArrowRight /></article>)}</div></div>
