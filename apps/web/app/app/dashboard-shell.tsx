@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowSquareOut, BellSimple, BookOpen, Buildings, CalendarDots, CaretRight, ChartLineUp, ChatCircleDots, Check, Clock, CreditCard, FileCsv, FloppyDisk, Gear, Lightning, LinkSimple, ListChecks, LockKey, PaperPlaneTilt, ShieldCheck, SignOut, Sparkle, Target, Trash, UploadSimple, UserPlus, WhatsappLogo } from "@phosphor-icons/react";
+import { ArrowSquareOut, BellSimple, BookOpen, Buildings, CalendarDots, CaretRight, ChartLineUp, ChatCircleDots, Check, Clock, CreditCard, FileCsv, FloppyDisk, Gear, Lightning, LinkSimple, ListChecks, LockKey, PaperPlaneTilt, ShieldCheck, SignOut, Sparkle, Target, Trash, UploadSimple, UserPlus, WarningCircle, WhatsappLogo } from "@phosphor-icons/react";
 import { NexusLogo } from "../shared/nexus-logo";
 import { AdminPanel } from "./admin-panel";
 
@@ -287,11 +287,9 @@ function SupportPanel({ demoMode }: { demoMode: boolean }) {
   const [category, setCategory] = useState("support");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [channel, setChannel] = useState("platform");
-  const [contact, setContact] = useState("");
   const [tickets, setTickets] = useState<SupportTicketSummary[]>([]);
   const [busy, setBusy] = useState(false);
-  const [feedback, setFeedback] = useState("");
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [openedTicket, setOpenedTicket] = useState("");
 
   useEffect(() => {
@@ -304,31 +302,41 @@ function SupportPanel({ demoMode }: { demoMode: boolean }) {
   function chooseCustomPlan() {
     setCategory("custom_plan");
     setSubject("Quero falar sobre o plano personalizado");
-    setFeedback("");
+    setFeedback(null);
   }
 
   async function submitTicket(event: FormEvent) {
     event.preventDefault();
-    if (!subject.trim() || !message.trim() || (channel !== "platform" && !contact.trim())) return;
-    setBusy(true); setFeedback("");
-    const payload = { category, subject: subject.trim(), message: message.trim(), preferred_channel: channel, contact_value: contact.trim() || null };
+    if (subject.trim().length < 4 || message.trim().length < 10) {
+      setFeedback({ type: "error", message: "Informe um assunto e descreva a solicitação com pelo menos 10 caracteres." });
+      return;
+    }
+    setBusy(true);
+    setFeedback(null);
+    const payload = { category, subject: subject.trim(), message: message.trim(), preferred_channel: "platform", contact_value: null };
     try {
       let ticket: SupportTicketSummary;
       if (demoMode) {
         ticket = { id: `demo-${Date.now()}`, category, priority: category === "custom_plan" ? "high" : "normal", status: "open", subject: payload.subject, message: payload.message, preferred_channel: payload.preferred_channel, contact_value: payload.contact_value, replies: [], created_at: new Date().toISOString() };
       } else {
         const response = await fetch(`${API_URL}/support/tickets`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")) }, body: JSON.stringify(payload) });
-        const body = await response.json();
-        if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : "Não foi possível enviar a solicitação.");
+        const body = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(typeof body?.detail === "string" ? body.detail : "Não foi possível enviar a solicitação.");
+        if (!body) throw new Error("O ticket foi recebido, mas não foi possível atualizar a tela. Recarregue a página para acompanhá-lo.");
         ticket = body;
       }
       setTickets((current) => [ticket, ...current]);
-      setMessage(""); setContact(""); setFeedback(category === "custom_plan" ? "Pedido prioritário enviado. Um especialista Nexus entrará em contato pelo canal escolhido." : "Solicitação enviada. Você pode acompanhar o andamento nesta página.");
-    } catch (reason) { setFeedback(reason instanceof Error ? reason.message : "Não foi possível enviar a solicitação."); } finally { setBusy(false); }
+      setMessage("");
+      setFeedback({ type: "success", message: category === "custom_plan" ? "Pedido prioritário enviado. Um especialista Nexus responderá pela plataforma." : "Solicitação enviada. Você pode acompanhar o andamento nesta página." });
+    } catch (reason) {
+      setFeedback({ type: "error", message: reason instanceof TypeError ? "Não foi possível conectar ao suporte. Tente novamente." : reason instanceof Error ? reason.message : "Não foi possível enviar a solicitação." });
+    } finally {
+      setBusy(false);
+    }
   }
 
   const statusLabels: Record<string, string> = { open: "Aberto", in_progress: "Em atendimento", resolved: "Resolvido" };
-  return <section className="personalization-view support-view"><div className="support-hero"><span><ChatCircleDots weight="duotone"/></span><div><small>CENTRAL DE SUPORTE</small><h2>A Nexus está ao seu lado</h2><p>Tire dúvidas sobre a plataforma ou solicite atendimento especializado sem sair do painel.</p></div><b>ATENDIMENTO DIRETO</b></div><div className="support-layout"><form className="module-card support-form" onSubmit={submitTicket}><div className="module-card-head"><span><PaperPlaneTilt/></span><div><h2>Nova solicitação</h2><p>Conte o que precisa e escolha como prefere receber o retorno.</p></div></div><div className="support-category"><button type="button" className={category === "support" ? "active" : ""} onClick={() => setCategory("support")}><ChatCircleDots/><span><strong>Suporte da plataforma</strong><small>Configuração, uso ou problemas</small></span></button><button type="button" className={category === "custom_plan" ? "active custom" : "custom"} onClick={chooseCustomPlan}><Sparkle weight="fill"/><span><strong>Plano personalizado</strong><small>Fale direto com um especialista</small></span></button></div><label>Assunto<input maxLength={200} value={subject} onChange={(event) => setSubject(event.target.value)} placeholder="Como podemos ajudar?" required/></label><label>Detalhes<textarea rows={6} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Descreva sua necessidade com o máximo de contexto." required/></label><div className="support-contact-grid"><label>Canal de retorno<select value={channel} onChange={(event) => setChannel(event.target.value)}><option value="platform">Pela plataforma</option><option value="email">E-mail</option><option value="whatsapp">WhatsApp</option><option value="phone">Telefone</option></select></label>{channel !== "platform" && <label>Seu contato<input maxLength={320} value={contact} onChange={(event) => setContact(event.target.value)} placeholder={channel === "email" ? "voce@empresa.com" : "(00) 00000-0000"} required/></label>}</div><button className="module-primary-button" disabled={busy}>{busy ? "Enviando..." : category === "custom_plan" ? "Solicitar contato prioritário" : "Enviar ao suporte"}</button>{feedback && <div className="support-feedback"><Check weight="bold"/> {feedback}</div>}</form><aside className="support-side"><article className="module-card custom-contact-card"><span><Sparkle weight="fill"/></span><small>EXCLUSIVO DO PLANO PERSONALIZADO</small><h2>Converse com quem vai desenhar sua solução</h2><p>Integrações com ERP, regras exclusivas e fluxos sob medida recebem acompanhamento direto da equipe Nexus.</p><ul><li><Check/> Solicitação com prioridade alta</li><li><Check/> Canal de retorno escolhido por você</li><li><Check/> Contexto registrado no seu workspace</li></ul><button type="button" onClick={chooseCustomPlan}>Quero falar com um especialista <CaretRight/></button></article><article className="module-card ticket-history"><div className="module-card-head"><span><ListChecks/></span><div><h2>Suas solicitações</h2><p>Acompanhe os contatos deste workspace.</p></div></div>{tickets.length ? <div className="ticket-list">{tickets.slice(0, 5).map((ticket) => <div key={ticket.id} className={openedTicket === ticket.id ? "open" : ""}><button type="button" className="ticket-open" aria-expanded={openedTicket === ticket.id} onClick={() => setOpenedTicket((current) => current === ticket.id ? "" : ticket.id)}><i className={ticket.priority === "high" ? "high" : ""}/><span><strong>{ticket.subject}</strong><small>{ticket.category === "custom_plan" ? "Plano personalizado" : "Suporte"} • {new Date(ticket.created_at).toLocaleDateString("pt-BR")}</small></span><b>{statusLabels[ticket.status] || ticket.status}</b></button>{openedTicket === ticket.id && <div className="ticket-details"><p>{ticket.message}</p><small>Retorno: {ticket.preferred_channel}{ticket.contact_value ? ` • ${ticket.contact_value}` : ""}</small></div>}</div>)}</div> : <div className="ticket-empty"><ChatCircleDots/><strong>Nenhuma solicitação ainda</strong><small>Quando precisar, sua conversa com a Nexus começa aqui.</small></div>}</article></aside></div></section>;
+  return <section className="personalization-view support-view"><div className="support-hero"><span><ChatCircleDots weight="duotone"/></span><div><small>CENTRAL DE SUPORTE</small><h2>A Nexus está ao seu lado</h2><p>Tire dúvidas sobre a plataforma ou solicite atendimento especializado sem sair do painel.</p></div><b>ATENDIMENTO DIRETO</b></div><div className="support-layout"><form className="module-card support-form" onSubmit={submitTicket}><div className="module-card-head"><span><PaperPlaneTilt/></span><div><h2>Nova solicitação</h2><p>Conte o que precisa e acompanhe o retorno pela plataforma.</p></div></div><div className="support-category"><button type="button" className={category === "support" ? "active" : ""} onClick={() => setCategory("support")}><ChatCircleDots/><span><strong>Suporte da plataforma</strong><small>Configuração, uso ou problemas</small></span></button><button type="button" className={category === "custom_plan" ? "active custom" : "custom"} onClick={chooseCustomPlan}><Sparkle weight="fill"/><span><strong>Plano personalizado</strong><small>Fale direto com um especialista</small></span></button></div><label>Assunto<input minLength={4} maxLength={200} value={subject} onChange={(event) => setSubject(event.target.value)} placeholder="Como podemos ajudar?" required/></label><label>Detalhes<textarea rows={6} minLength={10} maxLength={8000} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Descreva sua necessidade com o máximo de contexto." required/></label><div className="support-platform-note"><ChatCircleDots weight="duotone"/><span><strong>Retorno pela plataforma</strong><small>As respostas da equipe Nexus aparecerão no histórico das suas solicitações.</small></span></div><button className="module-primary-button" disabled={busy}>{busy ? "Enviando..." : category === "custom_plan" ? "Solicitar contato prioritário" : "Enviar ao suporte"}</button>{feedback && <div className={`support-feedback ${feedback.type}`}>{feedback.type === "success" ? <Check weight="bold"/> : <WarningCircle weight="bold"/>} {feedback.message}</div>}</form><aside className="support-side"><article className="module-card custom-contact-card"><span><Sparkle weight="fill"/></span><small>EXCLUSIVO DO PLANO PERSONALIZADO</small><h2>Converse com quem vai desenhar sua solução</h2><p>Integrações com ERP, regras exclusivas e fluxos sob medida recebem acompanhamento direto da equipe Nexus.</p><ul><li><Check/> Solicitação com prioridade alta</li><li><Check/> Retorno acompanhado pela plataforma</li><li><Check/> Contexto registrado no seu workspace</li></ul><button type="button" onClick={chooseCustomPlan}>Quero falar com um especialista <CaretRight/></button></article><article className="module-card ticket-history"><div className="module-card-head"><span><ListChecks/></span><div><h2>Suas solicitações</h2><p>Acompanhe os contatos deste workspace.</p></div></div>{tickets.length ? <div className="ticket-list">{tickets.slice(0, 5).map((ticket) => <div key={ticket.id} className={openedTicket === ticket.id ? "open" : ""}><button type="button" className="ticket-open" aria-expanded={openedTicket === ticket.id} onClick={() => setOpenedTicket((current) => current === ticket.id ? "" : ticket.id)}><i className={ticket.priority === "high" ? "high" : ""}/><span><strong>{ticket.subject}</strong><small>{ticket.category === "custom_plan" ? "Plano personalizado" : "Suporte"} • {new Date(ticket.created_at).toLocaleDateString("pt-BR")}</small></span><b>{statusLabels[ticket.status] || ticket.status}</b></button>{openedTicket === ticket.id && <div className="ticket-details"><p>{ticket.message}</p><small>Retorno: Pela plataforma</small></div>}</div>)}</div> : <div className="ticket-empty"><ChatCircleDots/><strong>Nenhuma solicitação ainda</strong><small>Quando precisar, sua conversa com a Nexus começa aqui.</small></div>}</article></aside></div></section>;
 }
 
 function AssistantPreview({ settings }: { settings: Settings }) { return <aside className="assistant-preview"><span>PRÉVIA DO ATENDIMENTO</span><div className="preview-bubble client">Olá! Vocês conseguem me ajudar?</div><div className="preview-bubble ai"><b><Sparkle weight="fill"/> NEXUS</b>Olá! Claro, será um prazer ajudar. Pode me contar o que você precisa?</div><small>Tom selecionado: {settings.assistant.tone}</small></aside>; }
@@ -614,3 +622,4 @@ function BillingPanel({ demoMode }: { demoMode: boolean }) {
     </section>
   );
 }
+
