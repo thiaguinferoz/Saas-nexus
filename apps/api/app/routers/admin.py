@@ -2,6 +2,7 @@ import uuid
 
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import and_, func, select
+from sqlalchemy.orm import selectinload
 
 from app.dependencies import CsrfGuard, CurrentPlatformAdmin, DbSession
 from app.models import (
@@ -9,6 +10,7 @@ from app.models import (
     Subscription,
     SubscriptionStatus,
     SupportTicket,
+    SupportTicketReply,
     SupportTicketStatus,
     Tenant,
     TenantStatus,
@@ -21,6 +23,8 @@ from app.schemas import (
     AdminSummaryRead,
     AdminSupportTicketRead,
     AdminSupportTicketUpdate,
+    SupportTicketReplyCreate,
+    SupportTicketReplyRead,
     AdminTenantRead,
 )
 
@@ -109,6 +113,7 @@ async def read_admin_overview(
 
     ticket_statement = (
         select(SupportTicket, Tenant.name)
+        .options(selectinload(SupportTicket.replies))
         .join(Tenant, Tenant.id == SupportTicket.tenant_id)
         .order_by(SupportTicket.created_at.desc())
         .limit(50)
@@ -125,6 +130,7 @@ async def read_admin_overview(
             message=ticket.message,
             preferred_channel=ticket.preferred_channel,
             contact_value=ticket.contact_value,
+            replies=[SupportTicketReplyRead.model_validate(reply) for reply in ticket.replies],
             created_at=ticket.created_at,
         )
         for ticket, tenant_name in ticket_rows
@@ -143,6 +149,7 @@ async def update_support_ticket(
     row = (
         await db.execute(
             select(SupportTicket, Tenant.name)
+            .options(selectinload(SupportTicket.replies))
             .join(Tenant, Tenant.id == SupportTicket.tenant_id)
             .where(SupportTicket.id == ticket_id)
         )
@@ -163,5 +170,36 @@ async def update_support_ticket(
         message=ticket.message,
         preferred_channel=ticket.preferred_channel,
         contact_value=ticket.contact_value,
+        replies=[SupportTicketReplyRead.model_validate(reply) for reply in ticket.replies],
         created_at=ticket.created_at,
     )
+
+
+@router.post(
+    "/support/tickets/{ticket_id}/replies",
+    response_model=SupportTicketReplyRead,
+    status_code=201,
+)
+async def reply_to_support_ticket(
+    ticket_id: uuid.UUID,
+    payload: SupportTicketReplyCreate,
+    db: DbSession,
+    admin: CurrentPlatformAdmin,
+    _csrf: CsrfGuard,
+) -> SupportTicketReplyRead:
+    ticket = await db.get(SupportTicket, ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Solicitação não encontrada")
+    reply = SupportTicketReply(
+        ticket_id=ticket.id,
+        tenant_id=ticket.tenant_id,
+        author_id=admin.id,
+        author_role="admin",
+        message=payload.message.strip(),
+    )
+    db.add(reply)
+    if ticket.status == SupportTicketStatus.OPEN:
+        ticket.status = SupportTicketStatus.IN_PROGRESS
+    await db.commit()
+    await db.refresh(reply)
+    return SupportTicketReplyRead.model_validate(reply)

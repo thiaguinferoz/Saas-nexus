@@ -224,6 +224,18 @@ class SupportTicketCreate(BaseModel):
     contact_value: str | None = Field(default=None, max_length=320)
 
 
+class SupportTicketReplyCreate(BaseModel):
+    message: str = Field(min_length=2, max_length=8000)
+
+
+class SupportTicketReplyRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    author_role: str
+    message: str
+    created_at: datetime
+
+
 class SupportTicketRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
@@ -234,6 +246,7 @@ class SupportTicketRead(BaseModel):
     message: str
     preferred_channel: str
     contact_value: str | None
+    replies: list[SupportTicketReplyRead] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
@@ -269,6 +282,7 @@ class AdminSupportTicketRead(BaseModel):
     message: str
     preferred_channel: str
     contact_value: str | None = None
+    replies: list[SupportTicketReplyRead] = Field(default_factory=list)
     created_at: datetime
 
 

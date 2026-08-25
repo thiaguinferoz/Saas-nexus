@@ -807,6 +807,20 @@ h1,h2,h3,h4,.brand,.nexus-brand,.button,button{font-family:var(--font-manrope),v
 .client-portal .admin-ticket-details dl div{display:grid;grid-template-columns:110px 1fr;gap:8px}
 .client-portal .admin-ticket-details dt{color:#8b91a5;font-size:9px}
 .client-portal .admin-ticket-details dd{margin:0;color:#3f4862;font-size:10px;overflow-wrap:anywhere}
+.client-portal .admin-reply-thread{margin-top:14px;display:grid;gap:8px}
+.client-portal .admin-reply-thread>strong{color:#4b3d7d;font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.client-portal .admin-reply-thread>div{padding:10px;border:1px solid #dfe9f4;border-radius:10px;background:#f4f9ff}
+.client-portal .admin-reply-thread header{display:flex;align-items:center;justify-content:space-between}
+.client-portal .admin-reply-thread header b{color:#3e6b91;background:#e3f1fc}
+.client-portal .admin-reply-thread time{color:#8a93a7;font-size:8px}
+.client-portal .admin-reply-thread p{margin-top:6px;color:#3f4862;font-size:10px;line-height:1.55;white-space:pre-wrap}
+.client-portal .admin-reply-form{margin-top:14px;display:grid;gap:9px}
+.client-portal .admin-ticket-list .admin-reply-form label{height:auto;margin:0;padding:0;display:grid;gap:7px;border:0;color:#4b3d7d;background:transparent;font-size:10px;font-weight:800}
+.client-portal .admin-reply-form textarea{width:100%;padding:10px 11px;border:1px solid #dfe2ec;border-radius:10px;outline:0;resize:vertical;color:#36405b;background:white;font:10px var(--font-inter)}
+.client-portal .admin-reply-form textarea:focus{border-color:#7653d5;box-shadow:0 0 0 3px #eeeaff}
+.client-portal .admin-reply-form button{min-height:38px;display:flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:10px;color:white;background:linear-gradient(115deg,#6040d4,#17a9c3);font:750 10px var(--font-manrope);cursor:pointer}
+.client-portal .admin-reply-form button:disabled{opacity:.55;cursor:not-allowed}
+.client-portal .admin-reply-form button svg{width:14px;height:14px}
 .client-portal .admin-ticket-list label{height:36px;margin-top:11px;padding:0 9px;display:flex;align-items:center;gap:7px;border:1px solid #e0e3eb;border-radius:10px;background:#fafbfe}
 .client-portal .admin-ticket-list label svg{width:14px;color:#198b69}
 .client-portal .admin-ticket-list select{width:100%;border:0;outline:0;color:#48516a;background:transparent;font:10px var(--font-inter)}

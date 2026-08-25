@@ -10,6 +10,7 @@ import {
   ClockCountdown,
   CreditCard,
   MagnifyingGlass,
+  PaperPlaneTilt,
   ShieldCheck,
   UsersThree,
   WhatsappLogo,
@@ -48,6 +49,7 @@ type AdminTicket = {
   message: string;
   preferred_channel: string;
   contact_value: string | null;
+  replies: Array<{ id: string; author_role: string; message: string; created_at: string }>;
   created_at: string;
 };
 
@@ -106,6 +108,7 @@ export function AdminPanel() {
   const [search, setSearch] = useState("");
   const [updatingTicket, setUpdatingTicket] = useState("");
   const [openedTicket, setOpenedTicket] = useState("");
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -167,6 +170,39 @@ export function AdminPanel() {
             }
           : current,
       );
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Erro inesperado.");
+    } finally {
+      setUpdatingTicket("");
+    }
+  }
+
+  async function sendReply(ticket: AdminTicket) {
+    const message = (replyDrafts[ticket.id] ?? "").trim();
+    if (message.length < 2) return;
+    setUpdatingTicket(ticket.id);
+    setError("");
+    try {
+      const response = await fetch(`${API_URL}/admin/support/tickets/${ticket.id}/replies`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")),
+        },
+        body: JSON.stringify({ message }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.detail ?? "Não foi possível enviar a resposta.");
+      setData((current) => current ? {
+        ...current,
+        support_tickets: current.support_tickets.map((item) => item.id === ticket.id ? {
+          ...item,
+          status: item.status === "open" ? "in_progress" : item.status,
+          replies: [...(item.replies ?? []), body],
+        } : item),
+      } : current);
+      setReplyDrafts((current) => ({ ...current, [ticket.id]: "" }));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Erro inesperado.");
     } finally {
@@ -263,6 +299,11 @@ export function AdminPanel() {
                       <div><dt>Canal de retorno</dt><dd>{ticket.preferred_channel}</dd></div>
                       <div><dt>Contato</dt><dd>{ticket.contact_value || "Pela plataforma"}</dd></div>
                     </dl>
+                    {(ticket.replies ?? []).length > 0 && <div className="admin-reply-thread"><strong>Histórico de respostas</strong>{ticket.replies.map((reply) => <div key={reply.id}><header><b>Equipe Nexus</b><time>{formatDate(reply.created_at)}</time></header><p>{reply.message}</p></div>)}</div>}
+                    <form className="admin-reply-form" onSubmit={(event) => { event.preventDefault(); void sendReply(ticket); }}>
+                      <label>Responder ao cliente<textarea rows={4} maxLength={8000} value={replyDrafts[ticket.id] ?? ""} onChange={(event) => setReplyDrafts((current) => ({ ...current, [ticket.id]: event.target.value }))} placeholder="Escreva a resposta que aparecerá para o cliente..." required/></label>
+                      <button type="submit" disabled={updatingTicket === ticket.id || (replyDrafts[ticket.id] ?? "").trim().length < 2}><PaperPlaneTilt weight="fill"/> {updatingTicket === ticket.id ? "Enviando..." : "Enviar resposta"}</button>
+                    </form>
                   </div>
                 )}
                 <label>

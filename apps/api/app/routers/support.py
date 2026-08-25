@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.dependencies import CsrfGuard, CurrentTenant, CurrentUser, DbSession
 from app.models import OutboxEvent, SupportTicket, SupportTicketCategory, SupportTicketPriority
@@ -12,11 +13,21 @@ router = APIRouter(prefix="/support", tags=["support"])
 async def list_support_tickets(tenant: CurrentTenant, db: DbSession) -> list[SupportTicketRead]:
     tickets = await db.scalars(
         select(SupportTicket)
+        .options(selectinload(SupportTicket.replies))
         .where(SupportTicket.tenant_id == tenant.id)
         .order_by(SupportTicket.created_at.desc())
         .limit(50)
     )
-    return [SupportTicketRead.model_validate(ticket) for ticket in tickets]
+    results: list[SupportTicketRead] = []
+    for ticket in tickets:
+        item = SupportTicketRead.model_validate(ticket)
+        if ticket.replies:
+            conversation = "\n\n".join(
+                f"Equipe Nexus: {reply.message}" for reply in ticket.replies
+            )
+            item.message = f"{ticket.message}\n\n— Respostas do suporte —\n{conversation}"
+        results.append(item)
+    return results
 
 
 @router.post("/tickets", response_model=SupportTicketRead, status_code=status.HTTP_201_CREATED)
