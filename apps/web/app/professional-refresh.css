@@ -582,6 +582,13 @@ h1, h2, h3, h4, .nexus-brand {
 .client-portal .admin-ticket-details { background: #f8fafc; }
 .client-portal .admin-reply-thread > div { border-radius: 8px; background: #f5f8ff; }
 .client-portal .admin-reply-form textarea { border-radius: 8px; }
+.client-portal .support-platform-note { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border: 1px solid #dce3f5; border-radius: 9px; color: #39425d; background: #f6f8ff; }
+.client-portal .support-platform-note > svg { width: 19px; height: 19px; flex: 0 0 19px; color: #4d63da; }
+.client-portal .support-platform-note > span { display: grid; gap: 3px; }
+.client-portal .support-platform-note strong { font-size: 10px; }
+.client-portal .support-platform-note small { color: #7d859b; font-size: 8px; line-height: 1.45; }
+.client-portal .support-feedback.error { color: #a33b48; background: #fff0f2; }
+.client-portal .support-feedback.error svg { color: #c24655; }
 
 @media (max-width: 1100px) {
   .nexus-hero { gap: 42px; grid-template-columns: 1fr .9fr; }
@@ -653,3 +660,4 @@ h1, h2, h3, h4, .nexus-brand {
   .client-portal .whatsapp-hero h2 { margin-top: 32px; font-size: 30px; }
   .client-portal .admin-banner { align-items: flex-start; flex-wrap: wrap; }
 }
+
