@@ -125,6 +125,7 @@ class SubscriptionRead(BaseModel):
 class WhatsAppOnboardingSessionRead(BaseModel):
     app_id: str
     configuration_id: str
+    solution_id: str
     state: str
 
 

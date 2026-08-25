@@ -64,7 +64,7 @@ Dependências por integração:
 
 - Resend: `RESEND_API_KEY`, `EMAIL_FROM` com remetente verificado e, para notificações internas, `SUPPORT_EMAIL`;
 - Stripe: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` e `STRIPE_PRICE_ID` pertencentes ao mesmo modo, além de `TRIAL_DAYS` e `BILLING_GRACE_DAYS` revisados;
-- Meta/YCloud: `YCLOUD_API_KEY`, `YCLOUD_WEBHOOK_SECRET`, `META_APP_ID` e `META_EMBEDDED_SIGNUP_CONFIG_ID` com permissões válidas;
+- Meta/YCloud: `YCLOUD_API_KEY`, `YCLOUD_WEBHOOK_SECRET`, `YCLOUD_SOLUTION_ID`, `META_APP_ID` e `META_EMBEDDED_SIGNUP_CONFIG_ID` com permissões válidas;
 - n8n: `N8N_HOST`, `N8N_ENCRYPTION_KEY` permanente e `N8N_POSTGRES_DB`, `N8N_POSTGRES_USER`, `N8N_POSTGRES_PASSWORD` exclusivos no Compose. `.env.n8n.example` documenta os nomes que chegam ao processo n8n.
 
 No serviço n8n, use `.env.n8n.example` como referência. `N8N_ENCRYPTION_KEY` precisa ser permanente; trocar ou perder essa chave remove o acesso às credenciais já cifradas. Nunca implante o n8n apontando para o banco e o usuário da aplicação Nexus.

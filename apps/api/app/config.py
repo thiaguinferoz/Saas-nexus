@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     password_reset_expire_minutes: int = Field(default=60, ge=10, le=1440)
     ycloud_api_key: str | None = None
     ycloud_webhook_secret: str | None = None
+    ycloud_solution_id: str | None = None
     meta_app_id: str | None = None
     meta_embedded_signup_config_id: str | None = None
     n8n_internal_webhook_url: str = "http://n8n:5678/webhook/nexus-automation-v1"

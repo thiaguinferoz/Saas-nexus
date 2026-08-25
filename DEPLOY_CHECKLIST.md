@@ -64,7 +64,7 @@ Não use `alembic stamp` apenas para contornar um erro. Primeiro compare o schem
 
 ### Meta/YCloud
 
-- [ ] `YCLOUD_API_KEY`, `YCLOUD_WEBHOOK_SECRET`, `META_APP_ID` e `META_EMBEDDED_SIGNUP_CONFIG_ID` são reais.
+- [ ] `YCLOUD_API_KEY`, `YCLOUD_WEBHOOK_SECRET`, `YCLOUD_SOLUTION_ID`, `META_APP_ID` e `META_EMBEDDED_SIGNUP_CONFIG_ID` são reais.
 - [ ] A conta possui as permissões de parceiro exigidas e o ambiente escolhido está liberado.
 
 Antes de continuar, procurar explicitamente por valores como `troque`, `seudominio`, `...` ou IDs ilustrativos. O deploy pode subir com placeholders e ainda assim deixar a funcionalidade quebrada.

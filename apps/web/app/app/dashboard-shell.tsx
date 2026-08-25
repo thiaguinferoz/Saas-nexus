@@ -347,7 +347,7 @@ function SupportPanel({ demoMode }: { demoMode: boolean }) {
 function AssistantPreview({ settings }: { settings: Settings }) { return <aside className="assistant-preview"><span>PRÉVIA DO ATENDIMENTO</span><div className="preview-bubble client">Olá! Vocês conseguem me ajudar?</div><div className="preview-bubble ai"><b><Sparkle weight="fill"/> NEXUS</b>Olá! Claro, será um prazer ajudar. Pode me contar o que você precisa?</div><small>Tom selecionado: {settings.assistant.tone}</small></aside>; }
 
 type WhatsAppConnection = { waba_id: string; phone_number: string; phone_number_id?: string; display_name?: string; quality_rating?: string; status: string };
-type EmbeddedSession = { app_id: string; configuration_id: string; state: string };
+type EmbeddedSession = { app_id: string; configuration_id: string; solution_id: string; state: string };
 
 function WhatsAppPanel({ demoMode, onConnectionChange }: { demoMode: boolean; onConnectionChange: (connected: boolean) => void }) {
   const [connection, setConnection] = useState<WhatsAppConnection | null>(null);
@@ -377,21 +377,52 @@ function WhatsAppPanel({ demoMode, onConnectionChange }: { demoMode: boolean; on
       const response = await fetch(`${API_URL}/whatsapp/onboarding/session`, { method: "POST", credentials: "include", headers: { "X-CSRF-Token": decodeURIComponent(readCookie("csrf_token")) } });
       const session = await response.json() as EmbeddedSession & { detail?: string };
       if (!response.ok) throw new Error(session.detail || "Não foi possível iniciar a autorização.");
-      const fbWindow = window as typeof window & { FB?: { init: (options: Record<string, unknown>) => void; login: (callback: (response: unknown) => void, options: Record<string, unknown>) => void } };
+      const fbWindow = window as typeof window & { FB?: { init: (options: Record<string, unknown>) => void; login: (callback: (response: { status?: string }) => void, options: Record<string, unknown>) => void } };
       if (!fbWindow.FB) throw new Error("O serviço de autorização da Meta ainda está carregando. Tente novamente em alguns segundos.");
       fbWindow.FB.init({ appId: session.app_id, cookie: true, xfbml: true, version: "v23.0" });
       const receiveMessage = (event: MessageEvent) => {
-        if (!event.origin.endsWith("facebook.com")) return;
+        const eventHost = new URL(event.origin).hostname;
+        if (eventHost !== "facebook.com" && !eventHost.endsWith(".facebook.com")) return;
         try {
           const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-          if (data?.type === "WA_EMBEDDED_SIGNUP" && data?.event === "FINISH") {
+          if (data?.type !== "WA_EMBEDDED_SIGNUP") return;
+          const finishedCoexistence = data.event === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING" || (data.event === "FINISH" && data.data?.is_wa_login_user);
+          if (finishedCoexistence) {
             window.removeEventListener("message", receiveMessage);
+            if (!data.data?.waba_id) {
+              setMessage("A Meta não retornou a conta do WhatsApp.");
+              setBusy(false);
+              return;
+            }
             finishOnboarding(session, { waba_id: data.data.waba_id, phone_number_id: data.data.phone_number_id }, phoneNumber).catch((reason) => { setMessage(reason instanceof Error ? reason.message : "Erro inesperado."); setBusy(false); });
+          } else if (data.event === "ERROR") {
+            window.removeEventListener("message", receiveMessage);
+            setMessage(data.data?.error_message || "A Meta não conseguiu concluir a autorização.");
+            setBusy(false);
+          } else if (data.event === "CANCEL") {
+            window.removeEventListener("message", receiveMessage);
+            setMessage("A autorização foi cancelada antes de terminar.");
+            setBusy(false);
           }
         } catch { /* mensagens externas que não pertencem ao onboarding */ }
       };
       window.addEventListener("message", receiveMessage);
-      fbWindow.FB.login(() => undefined, { config_id: session.configuration_id, response_type: "code", override_default_response_type: true, extras: { setup: {} } });
+      fbWindow.FB.login((loginResponse) => {
+        if (loginResponse.status && loginResponse.status !== "connected") {
+          window.removeEventListener("message", receiveMessage);
+          setMessage("A autorização da Meta não foi concluída.");
+          setBusy(false);
+        }
+      }, {
+        config_id: session.configuration_id,
+        response_type: "code",
+        override_default_response_type: true,
+        extras: {
+          setup: { solutionID: session.solution_id },
+          sessionInfoVersion: 3,
+          featureType: "whatsapp_business_app_onboarding",
+        },
+      });
       setMessage("Conclua a autorização na janela da Meta. Esta tela será atualizada automaticamente.");
     } catch (reason) { setMessage(reason instanceof Error ? reason.message : "Erro inesperado."); setBusy(false); }
   }

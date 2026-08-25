@@ -20,6 +20,14 @@ class YCloudClient:
             response.raise_for_status()
             return response.json()
 
+    async def bind_coexistence_waba(self, *, waba_id: str) -> dict:
+        """Bind a WhatsApp Business App coexistence WABA to the YCloud partner."""
+        path = f"/whatsapp/businessAccounts/{quote(waba_id, safe='')}/smb/bind"
+        async with httpx.AsyncClient(base_url=self.base_url, timeout=20) as client:
+            response = await client.post(path, headers=self.headers)
+            response.raise_for_status()
+            return response.json()
+
     async def send_text(self, *, sender: str, to: str, text: str, external_id: str, recipient_id: str | None = None, reply_to_message_id: str | None = None) -> dict:
         payload: dict = {"from": sender, "to": to, "type": "text", "text": {"body": text, "preview_url": False}, "externalId": external_id}
         if recipient_id:

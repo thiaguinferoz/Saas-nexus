@@ -29,14 +29,19 @@ async def read_connection(tenant: CurrentTenant, db: DbSession) -> WhatsAppConne
 
 @router.post("/whatsapp/onboarding/session", response_model=WhatsAppOnboardingSessionRead)
 async def create_onboarding_session(tenant: CurrentTenant, db: DbSession, _csrf: CsrfGuard) -> WhatsAppOnboardingSessionRead:
-    if not settings.meta_app_id or not settings.meta_embedded_signup_config_id:
+    if not settings.meta_app_id or not settings.meta_embedded_signup_config_id or not settings.ycloud_solution_id:
         raise HTTPException(status_code=503, detail="Embedded Signup ainda não configurado")
     subscription = await db.scalar(select(Subscription).where(Subscription.tenant_id == tenant.id))
     if not subscription or subscription.status not in {SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING}:
         raise HTTPException(status_code=402, detail="É necessário ativar a assinatura antes de conectar o WhatsApp")
     now = datetime.now(UTC)
     state = jwt.encode({"sub": str(tenant.id), "type": "ycloud_onboarding", "iat": now, "exp": now + timedelta(minutes=15)}, settings.app_secret_key, algorithm="HS256")
-    return WhatsAppOnboardingSessionRead(app_id=settings.meta_app_id, configuration_id=settings.meta_embedded_signup_config_id, state=state)
+    return WhatsAppOnboardingSessionRead(
+        app_id=settings.meta_app_id,
+        configuration_id=settings.meta_embedded_signup_config_id,
+        solution_id=settings.ycloud_solution_id,
+        state=state,
+    )
 
 
 @router.post("/whatsapp/onboarding/complete", response_model=WhatsAppConnectionRead)
@@ -48,23 +53,27 @@ async def complete_onboarding(payload: WhatsAppOnboardingComplete, tenant: Curre
     except (jwt.InvalidTokenError, ValueError):
         raise HTTPException(status_code=400, detail="Sessão de conexão inválida ou expirada") from None
     try:
-        remote = await YCloudClient().retrieve_phone_number(waba_id=payload.waba_id, phone_number=payload.phone_number)
+        remote = await YCloudClient().bind_coexistence_waba(waba_id=payload.waba_id)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=422, detail="Número não encontrado ou ainda não registrado na YCloud") from exc
+        raise HTTPException(status_code=422, detail="A YCloud não conseguiu vincular esta conta em modo de coexistência") from exc
+    remote_phone = str(remote.get("phoneNumber") or payload.phone_number)
+    remote_digits = "".join(character for character in remote_phone if character.isdigit())
+    canonical_phone = f"+{remote_digits}" if remote_digits else payload.phone_number
+    remote_phone_number_id = str(remote.get("id") or payload.phone_number_id or "") or None
     connection = await db.scalar(select(WhatsAppConnection).where(WhatsAppConnection.tenant_id == tenant.id))
     if not connection:
-        connection = WhatsAppConnection(tenant_id=tenant.id, waba_id=payload.waba_id, phone_number=payload.phone_number)
+        connection = WhatsAppConnection(tenant_id=tenant.id, waba_id=payload.waba_id, phone_number=canonical_phone)
         db.add(connection)
     connection.waba_id = payload.waba_id
-    connection.phone_number = payload.phone_number
-    connection.phone_number_id = payload.phone_number_id
+    connection.phone_number = canonical_phone
+    connection.phone_number_id = remote_phone_number_id
     connection.display_name = remote.get("verifiedName") or remote.get("displayName")
     connection.quality_rating = remote.get("qualityRating")
     connection.status = WhatsAppConnectionStatus.CONNECTED
     tenant.status = TenantStatus.ACTIVE
-    db.add(OutboxEvent(tenant_id=tenant.id, event_type="whatsapp.connection.activated", payload={"tenant_id": str(tenant.id), "waba_id": payload.waba_id, "phone_number": payload.phone_number}))
+    db.add(OutboxEvent(tenant_id=tenant.id, event_type="whatsapp.connection.activated", payload={"tenant_id": str(tenant.id), "waba_id": payload.waba_id, "phone_number": canonical_phone, "phone_number_id": remote_phone_number_id, "mode": "coexistence"}))
     try:
         await db.commit()
     except IntegrityError:
