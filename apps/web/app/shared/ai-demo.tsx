@@ -36,12 +36,12 @@ const scenarios = [
   {
     id: "audio", label: "Áudio e preço", icon: WhatsappLogo,
     title: "O cliente fala. A Nexus entende e responde.",
-    detail: "O áudio é transcrito, o serviço é identificado e o valor vem da fonte oficial configurada pela empresa.",
+    detail: "O áudio é transcrito, o plano é identificado e o valor mensal vem da fonte oficial configurada pela empresa.",
     messages: [
-      { side: "client", kind: "audio", text: "Oi, tudo bem? Eu queria saber quanto custa o serviço de instalação.", duration: "0:07", audioSrc: "/audio/demo-instalacao.wav", time: "11:22" },
-      { side: "system", kind: "transcript", text: "Serviço de instalação • intenção: consultar preço", time: "" },
-      { side: "ai", text: "Olá! A instalação padrão custa R$ 180,00. Se você me informar o modelo e o local, verifico se há algum adicional.", time: "11:22" },
-    ], badge: "Áudio compreendido em 2,1 s", signals: ["Áudio transcrito", "Serviço identificado", "Preço confirmado"],
+      { side: "client", kind: "audio", text: "Bom dia, quanto que é o plano anual básico do site de vocês?", duration: "0:05", audioSrc: "/audio/demo-plano-anual.ogg", time: "16:24" },
+      { side: "system", kind: "transcript", text: "Plano Comum anual • intenção: consultar preço", time: "" },
+      { side: "ai", text: "Bom dia! O Plano Comum, na contratação anual, custa R$ 450 por mês. O pagamento pode ser feito à vista ou parcelado em até 12 vezes.", time: "16:24" },
+    ], badge: "Áudio compreendido em 2,1 s", signals: ["Áudio transcrito", "Plano identificado", "Preço mensal confirmado"],
   },
 ];
 
@@ -115,7 +115,7 @@ export function AiDemo() {
         <div className="demo-top"><span className="mini-logo">N</span><div><strong>Nexus IA</strong><small><i /> online agora</small></div><WhatsappLogo weight="fill" /></div>
         <div className="demo-chat" key={`${active.id}-chat`}>
           <div className="privacy-note">As mensagens são protegidas e processadas com segurança</div>
-          {active.messages.map((message, index) => message.kind === "transcript" ? <div className="transcript-chip" key={index}><Sparkle weight="fill"/><span><b>Áudio compreendido</b>{message.text}</span></div> : <div className={`demo-message ${message.side} ${message.kind ?? "text"}`} key={index}>{message.side === "ai" && <b><Sparkle weight="fill" /> NEXUS</b>}{message.kind === "image" && <div className="image-preview"><span className="product-glow"/><Armchair weight="duotone"/><i>imagem analisada</i></div>}{message.kind === "audio" && "audioSrc" in message ? <AudioMessage src={message.audioSrc ?? "/audio/demo-instalacao.wav"} fallbackDuration={message.duration ?? "0:07"} transcript={message.text}/> : <span>{message.text}</span>}<time>{message.time}{message.side === "ai" ? " ✓✓" : ""}</time></div>)}
+        {active.messages.map((message, index) => message.kind === "transcript" ? <div className="transcript-chip" key={index}><Sparkle weight="fill"/><span><b>Áudio compreendido</b>{message.text}</span></div> : <div className={`demo-message ${message.side} ${message.kind ?? "text"}`} key={index}>{message.side === "ai" && <b><Sparkle weight="fill" /> NEXUS</b>}{message.kind === "image" && <div className="image-preview"><span className="product-glow"/><Armchair weight="duotone"/><i>imagem analisada</i></div>}{message.kind === "audio" && "audioSrc" in message ? <AudioMessage src={message.audioSrc ?? "/audio/demo-plano-anual.ogg"} fallbackDuration={message.duration ?? "0:05"} transcript={message.text}/> : <span>{message.text}</span>}<time>{message.time}{message.side === "ai" ? " ✓✓" : ""}</time></div>)}
           <div className="ai-status"><span><i /><i /><i /></span> IA analisou contexto, horário e intenção</div>
         </div>
         <div className="demo-input">Digite uma mensagem... <span>➤</span></div>
