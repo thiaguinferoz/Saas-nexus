@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarCheck, ChatCircleDots, ClockCountdown, Sparkle, WhatsappLogo } from "@phosphor-icons/react";
+import { Armchair, CalendarCheck, ChatCircleDots, ClockCountdown, Sparkle, WhatsappLogo } from "@phosphor-icons/react";
 
 const scenarios = [
   {
@@ -9,7 +9,7 @@ const scenarios = [
     title: "Entende produto, disponibilidade e entrega.",
     detail: "A Nexus combina imagem e texto, identifica o item e consulta as informações da empresa antes de responder.",
     messages: [
-      { side: "client", kind: "image", media: "🪑", text: "Olá! Vocês têm esse modelo na cor preta? Conseguem entregar hoje?", time: "14:31" },
+      { side: "client", kind: "image", text: "Olá! Vocês têm esse modelo na cor preta? Conseguem entregar hoje?", time: "14:31" },
       { side: "ai", text: "Olá! Temos esse modelo na cor preta. Para o seu CEP, a entrega pode ser feita hoje até as 19h. Quer que eu separe uma unidade?", time: "14:31" },
     ], badge: "Imagem + estoque + entrega", signals: ["Produto identificado", "Estoque consultado", "Prazo verificado"],
   },
@@ -59,10 +59,11 @@ export function AiDemo() {
         <div className="demo-copy" key={active.id}><span>{active.badge}</span><h3>{active.title}</h3><p>{active.detail}</p><div className="signal-list">{active.signals.map((signal) => <small key={signal}>✓ {signal}</small>)}</div></div>
       </div>
       <div className="demo-device">
+        <div className="demo-camera" aria-hidden="true" />
         <div className="demo-top"><span className="mini-logo">N</span><div><strong>Nexus IA</strong><small><i /> online agora</small></div><WhatsappLogo weight="fill" /></div>
         <div className="demo-chat" key={`${active.id}-chat`}>
           <div className="privacy-note">As mensagens são protegidas e processadas com segurança</div>
-          {active.messages.map((message, index) => message.kind === "transcript" ? <div className="transcript-chip" key={index}><Sparkle weight="fill"/><span><b>Áudio compreendido</b>{message.text}</span></div> : <div className={`demo-message ${message.side} ${message.kind ?? "text"}`} key={index}>{message.side === "ai" && <b><Sparkle weight="fill" /> NEXUS</b>}{message.kind === "image" && <div className="image-preview"><span>{"media" in message ? message.media : ""}</span><i>imagem analisada</i></div>}{message.kind === "audio" ? <div className="audio-bubble"><button aria-label="Reproduzir exemplo de áudio">▶</button><div className="audio-wave">{Array.from({ length: 25 }, (_, bar) => <i key={bar}/>)}</div><small>{"duration" in message ? message.duration : ""}</small></div> : <span>{message.text}</span>}{message.kind === "audio" && <em>“{message.text}”</em>}<time>{message.time}{message.side === "ai" ? " ✓✓" : ""}</time></div>)}
+          {active.messages.map((message, index) => message.kind === "transcript" ? <div className="transcript-chip" key={index}><Sparkle weight="fill"/><span><b>Áudio compreendido</b>{message.text}</span></div> : <div className={`demo-message ${message.side} ${message.kind ?? "text"}`} key={index}>{message.side === "ai" && <b><Sparkle weight="fill" /> NEXUS</b>}{message.kind === "image" && <div className="image-preview"><span className="product-glow"/><Armchair weight="duotone"/><i>imagem analisada</i></div>}{message.kind === "audio" ? <div className="audio-bubble"><button aria-label="Reproduzir exemplo de áudio">▶</button><div className="audio-wave">{Array.from({ length: 25 }, (_, bar) => <i key={bar}/>)}</div><small>{"duration" in message ? message.duration : ""}</small></div> : <span>{message.text}</span>}{message.kind === "audio" && <em>“{message.text}”</em>}<time>{message.time}{message.side === "ai" ? " ✓✓" : ""}</time></div>)}
           <div className="ai-status"><span><i /><i /><i /></span> IA analisou contexto, horário e intenção</div>
         </div>
         <div className="demo-input">Digite uma mensagem... <span>➤</span></div>

@@ -3,6 +3,7 @@ import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 import "./professional-refresh.css";
 import "./nexus-landing.css";
+import "./brand-system.css";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 const interfaceFont = Inter({ subsets: ["latin"], variable: "--font-inter" });

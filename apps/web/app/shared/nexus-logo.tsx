@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 const configuredMarketingUrl = process.env.NEXT_PUBLIC_MARKETING_URL?.trim();
@@ -6,11 +5,21 @@ const marketingUrl = configuredMarketingUrl && (configuredMarketingUrl.startsWit
   ? configuredMarketingUrl
   : "/";
 
-export function NexusLogo({ light = false, landing = true }: { light?: boolean; landing?: boolean }) {
+export function NexusLogo({
+  light = false,
+  landing = true,
+  compact = false,
+  className = "",
+}: {
+  light?: boolean;
+  landing?: boolean;
+  compact?: boolean;
+  className?: string;
+}) {
   return (
-    <Link className={`nexus-brand ${light ? "is-light" : ""}`} href={landing ? marketingUrl : "/"} aria-label="Nexus — voltar para a página inicial">
-      <span className="nexus-symbol"><Image src="/nexus_logo_transparente.png" alt="" width={96} height={96} priority /></span>
-      <span>NEXUS<small>automações inteligentes</small></span>
+    <Link className={`nexus-brand nexus-brand-unified ${light ? "is-light" : ""} ${compact ? "is-compact" : ""} ${className}`.trim()} href={landing ? marketingUrl : "/"} aria-label="Nexus — voltar para a página inicial">
+      <span className="nexus-symbol" aria-hidden="true">N</span>
+      <span>NEXUS</span>
     </Link>
   );
 }

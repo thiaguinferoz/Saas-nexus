@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { AiDemo } from "./shared/ai-demo";
+import { NexusLogo } from "./shared/nexus-logo";
 import {
   ArrowRight,
   Check,
@@ -42,7 +43,7 @@ export default function NexusLanding() {
   return (
     <main className="nx">
       <nav className="nx-nav nx-shell">
-        <Link href="/" className="nx-brand" aria-label="Nexus, página inicial"><span>N</span>NEXUS</Link>
+        <NexusLogo landing={false} compact className="nx-brand" />
         <div className="nx-nav-links"><a href="#beneficios">Benefícios</a><a href="#demonstracao">IA em ação</a><a href="#para-quem">Para quem é</a><a href="#planos">Planos</a></div>
         <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
           <Link style={{ color: "#d9d6e8", fontSize: "13px", fontWeight: 800 }} href={`${appUrl}/login`}>Entrar</Link>
@@ -94,8 +95,7 @@ export default function NexusLanding() {
       </section>
 
       <section className="nx-final nx-shell"><div className="nx-final-orb" /><p className="nx-trial"><Sparkle weight="fill" /> 3 DIAS DE TESTE GRÁTIS</p><h2>A próxima conversa pode<br /><i>mudar seu negócio.</i></h2><p>Coloque a Nexus para trabalhar hoje e descubra o que sua operação pode fazer com mais inteligência.</p><Link className="nx-primary" href={`${appUrl}/cadastro`}>Quero testar a Nexus <ArrowRight weight="bold" /></Link></section>
-      <footer className="nx-footer"><div className="nx-shell"><Link href="/" className="nx-brand"><span>N</span>NEXUS</Link><p>Inteligência que aproxima empresas e pessoas.</p><small>© 2026 Nexus. Todos os direitos reservados.</small></div></footer>
+      <footer className="nx-footer"><div className="nx-shell"><NexusLogo landing={false} compact className="nx-brand"/><p>Inteligência que aproxima empresas e pessoas.</p><small>© 2026 Nexus. Todos os direitos reservados.</small></div></footer>
     </main>
   );
 }
-
