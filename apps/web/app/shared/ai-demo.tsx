@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Armchair, CalendarCheck, ChatCircleDots, ClockCountdown, Sparkle, WhatsappLogo } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "react";
+import { Armchair, CalendarCheck, ChatCircleDots, ClockCountdown, Pause, Play, Sparkle, WhatsappLogo } from "@phosphor-icons/react";
 
 const scenarios = [
   {
@@ -38,12 +38,64 @@ const scenarios = [
     title: "O cliente fala. A Nexus entende e responde.",
     detail: "O áudio é transcrito, o serviço é identificado e o valor vem da fonte oficial configurada pela empresa.",
     messages: [
-      { side: "client", kind: "audio", text: "Oi, tudo bem? Eu queria saber quanto custa o serviço de instalação.", duration: "0:07", time: "11:22" },
+      { side: "client", kind: "audio", text: "Oi, tudo bem? Eu queria saber quanto custa o serviço de instalação.", duration: "0:07", audioSrc: "/audio/demo-instalacao.wav", time: "11:22" },
       { side: "system", kind: "transcript", text: "Serviço de instalação • intenção: consultar preço", time: "" },
       { side: "ai", text: "Olá! A instalação padrão custa R$ 180,00. Se você me informar o modelo e o local, verifico se há algum adicional.", time: "11:22" },
     ], badge: "Áudio compreendido em 2,1 s", signals: ["Áudio transcrito", "Serviço identificado", "Preço confirmado"],
   },
 ];
+
+function formatAudioTime(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${Math.floor(seconds % 60).toString().padStart(2, "0")}`;
+}
+
+function AudioMessage({ src, fallbackDuration, transcript }: { src: string; fallbackDuration: string; transcript: string }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const progress = duration > 0 ? currentTime / duration : 0;
+
+  useEffect(() => () => audioRef.current?.pause(), []);
+
+  async function togglePlayback() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      try { await audio.play(); } catch { setPlaying(false); }
+    } else {
+      audio.pause();
+    }
+  }
+
+  return (
+    <>
+      <audio
+        className="demo-audio-source"
+        ref={audioRef}
+        src={src}
+        preload="metadata"
+        onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
+        onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={(event) => { event.currentTarget.currentTime = 0; setPlaying(false); setCurrentTime(0); }}
+      />
+      <div className={`audio-bubble ${playing ? "is-playing" : ""}`}>
+        <button type="button" aria-label={playing ? "Pausar exemplo de áudio" : "Reproduzir exemplo de áudio"} aria-pressed={playing} onClick={togglePlayback}>
+          {playing ? <Pause weight="fill" /> : <Play weight="fill" />}
+        </button>
+        <div className="audio-wave" role="progressbar" aria-label="Progresso do áudio" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}>
+          {Array.from({ length: 25 }, (_, bar) => <i className={bar / 24 <= progress ? "played" : ""} key={bar}/>) }
+        </div>
+        <small>{duration > 0 ? formatAudioTime(playing || currentTime > 0 ? currentTime : duration) : fallbackDuration}</small>
+      </div>
+      <em>“{transcript}”</em>
+    </>
+  );
+}
 
 export function AiDemo() {
   const [active, setActive] = useState(scenarios[0]);
@@ -63,7 +115,7 @@ export function AiDemo() {
         <div className="demo-top"><span className="mini-logo">N</span><div><strong>Nexus IA</strong><small><i /> online agora</small></div><WhatsappLogo weight="fill" /></div>
         <div className="demo-chat" key={`${active.id}-chat`}>
           <div className="privacy-note">As mensagens são protegidas e processadas com segurança</div>
-          {active.messages.map((message, index) => message.kind === "transcript" ? <div className="transcript-chip" key={index}><Sparkle weight="fill"/><span><b>Áudio compreendido</b>{message.text}</span></div> : <div className={`demo-message ${message.side} ${message.kind ?? "text"}`} key={index}>{message.side === "ai" && <b><Sparkle weight="fill" /> NEXUS</b>}{message.kind === "image" && <div className="image-preview"><span className="product-glow"/><Armchair weight="duotone"/><i>imagem analisada</i></div>}{message.kind === "audio" ? <div className="audio-bubble"><button aria-label="Reproduzir exemplo de áudio">▶</button><div className="audio-wave">{Array.from({ length: 25 }, (_, bar) => <i key={bar}/>)}</div><small>{"duration" in message ? message.duration : ""}</small></div> : <span>{message.text}</span>}{message.kind === "audio" && <em>“{message.text}”</em>}<time>{message.time}{message.side === "ai" ? " ✓✓" : ""}</time></div>)}
+          {active.messages.map((message, index) => message.kind === "transcript" ? <div className="transcript-chip" key={index}><Sparkle weight="fill"/><span><b>Áudio compreendido</b>{message.text}</span></div> : <div className={`demo-message ${message.side} ${message.kind ?? "text"}`} key={index}>{message.side === "ai" && <b><Sparkle weight="fill" /> NEXUS</b>}{message.kind === "image" && <div className="image-preview"><span className="product-glow"/><Armchair weight="duotone"/><i>imagem analisada</i></div>}{message.kind === "audio" && "audioSrc" in message ? <AudioMessage src={message.audioSrc ?? "/audio/demo-instalacao.wav"} fallbackDuration={message.duration ?? "0:07"} transcript={message.text}/> : <span>{message.text}</span>}<time>{message.time}{message.side === "ai" ? " ✓✓" : ""}</time></div>)}
           <div className="ai-status"><span><i /><i /><i /></span> IA analisou contexto, horário e intenção</div>
         </div>
         <div className="demo-input">Digite uma mensagem... <span>➤</span></div>

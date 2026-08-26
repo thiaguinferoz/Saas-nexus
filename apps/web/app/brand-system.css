@@ -232,8 +232,21 @@
 }
 .nx .image-preview i { z-index: 2; color: #fff; background: rgba(36, 26, 78, .72); }
 .nx .transcript-chip { border-color: rgba(137, 105, 227, .13); background: rgba(255, 255, 255, .78); }
-.nx .audio-bubble button { background: linear-gradient(135deg, var(--brand-blue), var(--brand-purple), var(--brand-cyan)); }
-.nx .audio-wave i { background: #7757de; }
+.nx .audio-bubble button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: linear-gradient(135deg, var(--brand-blue), var(--brand-purple), var(--brand-cyan));
+  box-shadow: 0 5px 14px rgba(107, 77, 221, .22);
+  transition: transform .18s, box-shadow .18s;
+}
+.nx .audio-bubble button:hover { transform: scale(1.06); box-shadow: 0 7px 18px rgba(107, 77, 221, .3); }
+.nx .audio-bubble button:focus-visible { outline: 2px solid #7f69ed; outline-offset: 2px; }
+.nx .audio-bubble button svg { width: 11px; height: 11px; }
+.nx .audio-wave i { opacity: .24; background: #7757de; transition: opacity .12s, background .12s, transform .12s; }
+.nx .audio-wave i.played { opacity: 1; background: linear-gradient(180deg, var(--brand-blue), var(--brand-purple)); transform: scaleY(1.08); }
+.nx .audio-bubble.is-playing .audio-wave i.played { box-shadow: 0 0 5px rgba(116, 83, 226, .18); }
+.nx .demo-audio-source { display: none; }
 .nx .ai-status { color: #7d758f; font-size: 8px; }
 .nx .ai-status i { background: #7a58e8; }
 .nx .demo-input {
