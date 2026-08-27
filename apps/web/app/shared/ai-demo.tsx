@@ -103,7 +103,7 @@ export function AiDemo() {
     <section className="demo-section shell" id="demonstracao">
       <div className="demo-intro">
         <span className="eyebrow"><Sparkle weight="fill" /> IA aplicada à conversa real</span>
-        <h2>Veja a Nexus pensando junto com a sua operação.</h2>
+        <h2>Veja como a Nexus transforma conversas em negócios.</h2>
         <p>Não é um menu engessado. A IA interpreta a mensagem, respeita suas regras e sabe o momento certo de envolver uma pessoa.</p>
         <div className="demo-tabs" role="tablist" aria-label="Exemplos de funcionamento">
           {scenarios.map((scenario) => { const Icon = scenario.icon; return <button key={scenario.id} role="tab" aria-selected={active.id === scenario.id} className={active.id === scenario.id ? "active" : ""} onClick={() => setActive(scenario)}><Icon />{scenario.label}</button>; })}

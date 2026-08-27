@@ -54,8 +54,8 @@ export default function NexusLanding() {
       <section className="nx-hero nx-shell">
         <div className="nx-hero-copy nx-reveal">
           <p className="nx-trial"><Sparkle weight="fill" /> 3 DIAS DE TESTE GRÁTIS</p>
-          <h1>Seu WhatsApp.<br /><i>Seu negócio em movimento.</i></h1>
-          <p className="nx-lead">A Nexus transforma cada conversa em uma oportunidade, com uma IA que atende, entende e faz sua operação avançar.</p>
+          <h1>Conversas que viram<br /><i>negócios.</i></h1>
+          <p className="nx-lead">A Nexus atende, entende e conduz seus clientes pelo WhatsApp com uma IA que trabalha 24 horas para fazer sua operação avançar.</p>
           <div className="nx-actions">
             <Link className="nx-primary" href={`${appUrl}/cadastro`}>Começar 3 dias grátis <ArrowRight weight="bold" /></Link>
             <a className="nx-secondary" href="#demonstracao"><Play weight="fill" /> Ver a IA funcionando</a>
@@ -72,7 +72,7 @@ export default function NexusLanding() {
         </div>
       </section>
 
-      <section className="nx-strip"><div className="nx-shell"><strong>Uma plataforma. Uma operação mais inteligente.</strong><span><Clock /> 3 dias grátis para testar sem compromisso</span></div></section>
+      <section className="nx-strip"><div className="nx-shell"><strong>Do primeiro “oi” ao próximo passo.</strong><span><Clock /> 3 dias grátis para testar sem compromisso</span></div></section>
 
       <section id="beneficios" className="nx-section nx-shell">
         <header className="nx-heading nx-reveal"><p>O VALOR QUE VOCÊ PERCEBE</p><h2>Menos esforço operacional.<br />Mais conversas que viram resultado.</h2></header>
@@ -94,8 +94,8 @@ export default function NexusLanding() {
         <div className="nx-shell"><header className="nx-pricing-head nx-reveal"><p className="nx-kicker">PLANOS SIMPLES. RESULTADOS GRANDES.</p><h2>Escolha o ritmo da sua evolução.</h2><p>Comece com 3 dias gratuitos. Depois, fique com o plano que acompanha sua operação.</p><div className="nx-toggle" role="group" aria-label="Período de contrato"><button className={!annual ? "active" : ""} onClick={() => setAnnual(false)}>Contrato mensal</button><button className={annual ? "active" : ""} onClick={() => setAnnual(true)}>Contrato anual <small>Economize 25%</small></button></div></header><div className="nx-plan-grid">{plans.map(plan => { const price = annual ? plan.yearly : plan.monthly; return <article className={`nx-plan ${plan.featured ? "featured" : ""} nx-reveal`} key={plan.name}>{plan.featured && <p className="nx-popular">MAIS ESCOLHIDO</p>}<div><h3>{plan.name}</h3><p>{plan.subtitle}</p></div><div className="nx-price"><small>R$</small><strong>{price}</strong><span>/mês</span></div><p className="nx-contract">{annual ? "no contrato anual" : "no contrato mensal"}</p><ul>{plan.items.map(item => <li key={item}><Check weight="bold" />{item}</li>)}</ul><Link className={plan.featured ? "nx-primary" : "nx-plan-button"} href={`${appUrl}/cadastro`}>Começar teste grátis <ArrowRight weight="bold" /></Link></article>})}</div><p className="nx-price-note"><Sparkle weight="fill" /> Todo plano começa com 3 dias de teste grátis.</p></div>
       </section>
 
-      <section className="nx-final nx-shell"><div className="nx-final-orb" /><p className="nx-trial"><Sparkle weight="fill" /> 3 DIAS DE TESTE GRÁTIS</p><h2>A próxima conversa pode<br /><i>mudar seu negócio.</i></h2><p>Coloque a Nexus para trabalhar hoje e descubra o que sua operação pode fazer com mais inteligência.</p><Link className="nx-primary" href={`${appUrl}/cadastro`}>Quero testar a Nexus <ArrowRight weight="bold" /></Link></section>
-      <footer className="nx-footer"><div className="nx-shell"><NexusLogo landing={false} compact className="nx-brand"/><p>Inteligência que aproxima empresas e pessoas.</p><small>© 2026 Nexus. Todos os direitos reservados.</small></div></footer>
+      <section className="nx-final nx-shell"><div className="nx-final-orb" /><p className="nx-trial"><Sparkle weight="fill" /> 3 DIAS DE TESTE GRÁTIS</p><h2>A próxima conversa pode<br /><i>virar negócio.</i></h2><p>Coloque a Nexus para trabalhar hoje e transforme cada nova mensagem em uma oportunidade de avançar.</p><Link className="nx-primary" href={`${appUrl}/cadastro`}>Quero testar a Nexus <ArrowRight weight="bold" /></Link></section>
+      <footer className="nx-footer"><div className="nx-shell"><NexusLogo landing={false} compact className="nx-brand"/><p>Conversas que viram negócios.</p><small>© 2026 Nexus. Todos os direitos reservados.</small></div></footer>
     </main>
   );
 }

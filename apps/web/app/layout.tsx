@@ -9,8 +9,8 @@ const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 const interfaceFont = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Nexus — Inteligência para seu WhatsApp",
-  description: "Transforme conversas em oportunidades com uma operação inteligente no WhatsApp.",
+  title: "Nexus — Conversas que viram negócios",
+  description: "A Nexus usa inteligência artificial para atender, entender e transformar conversas no WhatsApp em novas oportunidades de negócio.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
