@@ -95,7 +95,7 @@ export default function NexusLanding() {
       </section>
 
       <section className="nx-final nx-shell"><div className="nx-final-orb" /><p className="nx-trial"><Sparkle weight="fill" /> 3 DIAS DE TESTE GRÁTIS</p><h2>A próxima conversa pode<br /><i>virar negócio.</i></h2><p>Coloque a Nexus para trabalhar hoje e transforme cada nova mensagem em uma oportunidade de avançar.</p><Link className="nx-primary" href={`${appUrl}/cadastro`}>Quero testar a Nexus <ArrowRight weight="bold" /></Link></section>
-      <footer className="nx-footer"><div className="nx-shell"><NexusLogo landing={false} compact className="nx-brand"/><p>Conversas que viram negócios.</p><small>© 2026 Nexus. Todos os direitos reservados.</small></div></footer>
+      <footer className="nx-footer"><div className="nx-shell"><NexusLogo landing={false} compact className="nx-brand"/><nav aria-label="Informações legais"><Link href="/termos-de-servico">Termos de Serviço</Link><Link href="/politica-de-privacidade">Política de Privacidade</Link></nav><small>© 2026 Nexus. Todos os direitos reservados.</small></div></footer>
     </main>
   );
 }
